@@ -136,8 +136,8 @@ class WhatsAppGreenClient:
             """Handle incoming webhook events with authentication"""
             try:
                 # Check for authentication token in headers
-                auth_header = request.headers.get('X-Webhook-Token')
-                if not auth_header or auth_header != webhook_token:
+                auth_header = request.headers.get('authorization')
+                if not auth_header or auth_header != f"Bearer {webhook_token}":
                     self.logger.warning("Unauthorized webhook attempt")
                     return Response("Unauthorized", status=401)
                 

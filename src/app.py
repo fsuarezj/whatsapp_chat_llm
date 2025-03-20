@@ -34,19 +34,6 @@ class MyWhatsAppClient(WhatsAppGreenClient):
         print(f"Got location from {sender}: {location_data}")
         self.send_text_message(sender, "Thanks for sharing your location!")
 
-# Initialize WhatsApp client
-whatsapp = MyWhatsAppClient(
-    instance_id=os.getenv('GREEN_API_INSTANCE_ID'),
-    instance_token=os.getenv('GREEN_API_INSTANCE_TOKEN')
-)
-
-# Setup webhook with authentication
-WEBHOOK_TOKEN = os.getenv('GREEN_API_WEBHOOK_TOKEN')  # Add this to your .env file
-whatsapp.setup_webhook(
-    app=app,
-    path='/webhook',
-    webhook_token=WEBHOOK_TOKEN
-)
 
 # Initialize MTN MoMo client
 momo = MTNMoMo(
@@ -98,6 +85,21 @@ def set_webhook_url():
         print(f"Failed to set webhook URL: {str(e)}")
 
 if __name__ == '__main__':
+
+    # Initialize WhatsApp client
+    whatsapp = MyWhatsAppClient(
+        instance_id=os.getenv('GREEN_API_INSTANCE_ID'),
+        instance_token=os.getenv('GREEN_API_INSTANCE_TOKEN')
+    )
+
+    # Setup webhook with authentication
+    WEBHOOK_TOKEN = os.getenv('GREEN_API_WEBHOOK_TOKEN')  # Add this to your .env file
+    whatsapp.setup_webhook(
+        app=app,
+        path='/webhook',
+        webhook_token=WEBHOOK_TOKEN
+    )
+
     try:
         status = whatsapp.get_instance_status()
         print(f"Instance status: {status}")
@@ -111,7 +113,7 @@ if __name__ == '__main__':
         message='Hello from Green API!'
     )
     
-    set_webhook_url()
+    #set_webhook_url()
     app.run(port=3000, debug=True)
 
 #transaction = momo.check_transaction('2')
