@@ -2,7 +2,7 @@ from flask import Flask, request, Response
 import dotenv
 import os
 from typing import Dict
-from whatsapp_green_client import WhatsAppGreenClient
+from chat_clients.whatsapp_green_client import WhatsAppGreenClient
 from mtn_momo import MTNMoMo
 import requests
 import time
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     
     whatsapp.send_text_message(
         to='34696864400',
-        message='Hello from Green API!'
+        message='Starting the server'
     )
     
     #set_webhook_url()
