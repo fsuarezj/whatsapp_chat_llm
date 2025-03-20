@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional, List
 import logging
 from datetime import datetime
 import os
+from pprint import pprint
 
 class WhatsAppGreenClient:
     def __init__(self, instance_id: str, instance_token: str):
@@ -134,10 +135,11 @@ class WhatsAppGreenClient:
             """Handle incoming webhook events"""
             try:
                 data = request.get_json()
+                pprint(data)
                 
                 if data.get('typeWebhook') == 'incomingMessageReceived':
                     message_data = data.get('messageData', {})
-                    self._handle_message(message_data)
+                    self._handle_message(data)
                     
                 return Response(status=200)
                 
@@ -153,23 +155,22 @@ class WhatsAppGreenClient:
             message_data: Message data from webhook
         """
         try:
-            message_type = message_data.get('typeMessage')
+            message_type = message_data.get('messageData').get('typeMessage')
             sender = message_data.get('senderData', {}).get('sender')
+            sender_name = message_data.get('senderData', {}).get('senderName')
             
             if message_type == 'textMessage':
-                text = message_data.get('textMessageData', {}).get('textMessage', '')
-                sender_name = message_data.get('senderData', {}).get('senderName')
-                sender_name = message_data.get('senderData', {}).get('sender')
+                text = message_data.get('messageData').get('textMessageData', {}).get('textMessage', '')
                 self.logger.info(f"Received text message from {sender}: {text}")
                 self._process_text_message(sender_name, text)
                 
             elif message_type == 'fileMessage':
-                file_data = message_data.get('fileMessageData', {})
+                file_data = message_data.get('messageData').get('fileMessageData', {})
                 self.logger.info(f"Received file from {sender}")
                 self._process_file_message(sender, file_data)
                 
             elif message_type == 'locationMessage':
-                location_data = message_data.get('locationMessageData', {})
+                location_data = message_data.get('messageData').get('locationMessageData', {})
                 self.logger.info(f"Received location from {sender}")
                 self._process_location_message(sender, location_data)
                 
