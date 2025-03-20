@@ -5,4 +5,5 @@
   "remoteEnv": {
     "GREEN_API_INSTANCE_ID": "${secrets.GREEN_API_INSTANCE_ID}",
     "GREEN_API_INSTANCE_TOKEN": "${secrets.GREEN_API_INSTANCE_TOKEN}"
+  }
 }
