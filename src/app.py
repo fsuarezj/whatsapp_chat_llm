@@ -79,12 +79,6 @@ def send_file():
     except Exception as e:
         return {'error': str(e)}, 500
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    print("Webhook received!")
-    print(request.json)  # This will print all incoming webhook data
-    return Response(status=200)
-
 def set_webhook_url():
     # Your Codespace public URL + /webhook
     codespace_url = "https://psychic-cod-vwgjv9xpj9fx4q7-3000.app.github.dev/webhook"  # Replace with your actual URL
