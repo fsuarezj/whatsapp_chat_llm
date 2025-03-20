@@ -15,21 +15,24 @@ app = Flask(__name__)
 
 # Create a custom client by inheriting from WhatsAppGreenClient
 class MyWhatsAppClient(WhatsAppGreenClient):
-    def _process_text_message(self, sender: str, text: str):
+    def _process_text_message(self, sender: str, chat_name: str, text: str):
         """Handle incoming text messages"""
         print(f"✨ New message received!")
-        print(f"From: {sender}")
+        if chat_name == sender:
+            print(f"Message in group {chat_name} from: {sender}")
+        else:
+            print(f"From: {sender}")
         print(f"Message: {text}")
-        
+            
         # Auto-reply
         self.send_text_message(sender, f"Thanks for your message: {text}")
 
-    def _process_file_message(self, sender: str, file_data: Dict):
+    def _process_file_message(self, sender: str, chat_name: str, file_data: Dict):
         """Handle incoming file messages"""
         print(f"Got file from {sender}: {file_data}")
         self.send_text_message(sender, "Thanks for the file!")
 
-    def _process_location_message(self, sender: str, location_data: Dict):
+    def _process_location_message(self, sender: str, chat_name: str, location_data: Dict):
         """Handle incoming location messages"""
         print(f"Got location from {sender}: {location_data}")
         self.send_text_message(sender, "Thanks for sharing your location!")

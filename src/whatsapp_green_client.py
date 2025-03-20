@@ -165,34 +165,35 @@ class WhatsAppGreenClient:
             message_type = message_data.get('messageData').get('typeMessage')
             sender = message_data.get('senderData', {}).get('sender')
             sender_name = message_data.get('senderData', {}).get('senderName')
+            chat_name = message_data.get('senderData', {}).get('chatName')
             
             if message_type == 'textMessage':
                 text = message_data.get('messageData').get('textMessageData', {}).get('textMessage', '')
                 self.logger.info(f"Received text message from {sender}: {text}")
-                self._process_text_message(sender_name, text)
+                self._process_text_message(sender_name, chat_name, text)
                 
             elif message_type == 'fileMessage':
                 file_data = message_data.get('messageData').get('fileMessageData', {})
                 self.logger.info(f"Received file from {sender}")
-                self._process_file_message(sender, file_data)
+                self._process_file_message(sender, chat_name, file_data)
                 
             elif message_type == 'locationMessage':
                 location_data = message_data.get('messageData').get('locationMessageData', {})
                 self.logger.info(f"Received location from {sender}")
-                self._process_location_message(sender, location_data)
+                self._process_location_message(sender, chat_name, location_data)
                 
         except Exception as e:
             self.logger.error(f"Error handling message: {str(e)}")
 
-    def _process_text_message(self, sender: str, text: str):
+    def _process_text_message(self, sender: str, chat_name: str, text: str):
         """Override this method to handle text messages"""
         pass
 
-    def _process_file_message(self, sender: str, file_data: Dict):
+    def _process_file_message(self, sender: str, chat_name: str, file_data: Dict):
         """Override this method to handle file messages"""
         pass
 
-    def _process_location_message(self, sender: str, location_data: Dict):
+    def _process_location_message(self, sender: str, chat_name: str, location_data: Dict):
         """Override this method to handle location messages"""
         pass
 
