@@ -158,8 +158,10 @@ class WhatsAppGreenClient:
             
             if message_type == 'textMessage':
                 text = message_data.get('textMessageData', {}).get('textMessage', '')
+                sender_name = message_data.get('senderData', {}).get('senderName')
+                sender_name = message_data.get('senderData', {}).get('sender')
                 self.logger.info(f"Received text message from {sender}: {text}")
-                self._process_text_message(sender, text)
+                self._process_text_message(sender_name, text)
                 
             elif message_type == 'fileMessage':
                 file_data = message_data.get('fileMessageData', {})
