@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, Response
 import dotenv
 import os
 from typing import Dict
@@ -17,8 +17,11 @@ app = Flask(__name__)
 class MyWhatsAppClient(WhatsAppGreenClient):
     def _process_text_message(self, sender: str, text: str):
         """Handle incoming text messages"""
-        print(f"Got message from {sender}: {text}")
-        # Auto-reply example
+        print(f"✨ New message received!")
+        print(f"From: {sender}")
+        print(f"Message: {text}")
+        
+        # Auto-reply
         self.send_text_message(sender, f"Thanks for your message: {text}")
 
     def _process_file_message(self, sender: str, file_data: Dict):
@@ -76,6 +79,28 @@ def send_file():
     except Exception as e:
         return {'error': str(e)}, 500
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    print("Webhook received!")
+    print(request.json)  # This will print all incoming webhook data
+    return Response(status=200)
+
+def set_webhook_url():
+    # Your Codespace public URL + /webhook
+    codespace_url = "https://psychic-cod-vwgjv9xpj9fx4q7-3000.app.github.dev/webhook"  # Replace with your actual URL
+    instance_id = os.getenv('GREEN_API_INSTANCE_ID')
+    instance_token = os.getenv('GREEN_API_INSTANCE_TOKEN')
+    
+    try:
+        response = requests.post(
+            f"https://api.green-api.com/waInstance{instance_id}/setSettings/{instance_token}",
+            json={"webhookUrl": codespace_url}
+        )
+        response.raise_for_status()
+        print(f"Webhook URL successfully set to: {codespace_url}")
+    except Exception as e:
+        print(f"Failed to set webhook URL: {str(e)}")
+
 if __name__ == '__main__':
     try:
         status = whatsapp.get_instance_status()
@@ -90,6 +115,7 @@ if __name__ == '__main__':
         message='Hello from Green API!'
     )
     
+    set_webhook_url()
     app.run(port=3000, debug=True)
 
 #transaction = momo.check_transaction('2')
