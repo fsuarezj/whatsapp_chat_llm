@@ -121,18 +121,25 @@ class WhatsAppGreenClient:
             self.logger.error(f"Failed to send location to {to}: {str(e)}")
             raise
 
-    def setup_webhook(self, app: Flask, path: str):
+    def setup_webhook(self, app: Flask, path: str, webhook_token: str):
         """
-        Setup webhook endpoint for receiving messages
+        Setup webhook endpoint with authentication
         
         Args:
             app: Flask application instance
             path: Webhook path
+            webhook_token: Secret token for webhook authentication
         """
         @app.route(path, methods=['POST'])
         def webhook():
-            """Handle incoming webhook events"""
+            """Handle incoming webhook events with authentication"""
             try:
+                # Check for authentication token in headers
+                auth_header = request.headers.get('X-Webhook-Token')
+                if not auth_header or auth_header != webhook_token:
+                    self.logger.warning("Unauthorized webhook attempt")
+                    return Response("Unauthorized", status=401)
+                
                 data = request.get_json()
                 
                 if data.get('typeWebhook') == 'incomingMessageReceived':

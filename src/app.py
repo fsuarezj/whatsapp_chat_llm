@@ -40,10 +40,12 @@ whatsapp = MyWhatsAppClient(
     instance_token=os.getenv('GREEN_API_INSTANCE_TOKEN')
 )
 
-# Setup webhook
+# Setup webhook with authentication
+WEBHOOK_TOKEN = os.getenv('GREEN_API_WEBHOOK_TOKEN')  # Add this to your .env file
 whatsapp.setup_webhook(
     app=app,
-    path='/webhook'
+    path='/webhook',
+    webhook_token=WEBHOOK_TOKEN
 )
 
 # Initialize MTN MoMo client
