@@ -1,0 +1,38 @@
+handlers:
+    # General Stdout log
+  - sink: ext://sys.stdout
+    level: DEBUG
+    filter: {"": "DEBUG", "myformassistant.agents.form_builder": "TRACE"}
+    # General File log
+  - sink: logs/form_assisstant.log
+    rotation: "00:00"
+    delay: True
+    compression: "zip"
+    enqueue: true
+    serialize: true
+    # Training sets log
+  - sink: logs/training_sets/training_sets.log
+    format: ""
+    filter:
+      "()": config.conf.training_filter
+    #filter: "myformassistant.main_assistant"
+    #filter: {"myformassistant.main_assistant": "NEW", "": "CRITICAL"}
+    level: TRAINING_SET 
+    rotation: "00:00"
+    compression: "zip"
+    enqueue: true
+    serialize: true
+levels:
+  - name: TRAINING_SET
+    'no': 25
+    color: <green>
+  - name: CORRECTED
+    'no': 15
+    color: <fg 200>
+  - name: AGENT_CALL
+    'no': 18
+    color: <white>
+activation:
+  - [ "", true ]
+  - [ "myformassistant.agents.form_parser_new", true ]
+  - [ "myformassistant.agents.form_builder", true ]

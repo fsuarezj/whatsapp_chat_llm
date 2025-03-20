@@ -1,0 +1,26 @@
+﻿handlers:
+    # General Stdout log
+  - sink: ext://sys.stdout
+    level: DEBUG
+    filter: {"": "DEBUG", "agents.first_agent": "TRACE"}
+    # General File log
+  - sink: logs/chatbot.log
+    rotation: "00:00"
+    delay: True
+    compression: "zip"
+    enqueue: true
+    serialize: true
+    filter: {"chatbot": "DEBUG"}
+  - sink: logs/app.log
+    rotation: "00:00"
+    delay: True
+    compression: "zip"
+    enqueue: true
+    serialize: true
+    filter: {"app": "DEBUG", "chat_clients": "DEBUG"}
+levels:
+  - name: AGENT_CALL
+    'no': 18
+    color: <fg 200>
+activation:
+  - [ "", true ]

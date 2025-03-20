@@ -1,8 +1,8 @@
 import requests
 from typing import Dict, List, Optional
-import logging
 from datetime import datetime
 import json
+from loguru import logger
 
 class MTNMoMo:
     def __init__(self, api_key: str, user_id: str, primary_key: str, environment: str = 'sandbox'):
@@ -22,14 +22,6 @@ class MTNMoMo:
         
         # Set base URL based on environment
         self.base_url = "https://sandbox.momodeveloper.mtn.com" if environment == 'sandbox' else "https://momodeveloper.mtn.com"
-        
-        # Setup logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            filename=f'mtn_momo_{datetime.now().strftime("%Y%m%d")}.log'
-        )
-        self.logger = logging.getLogger(__name__)
 
     def _get_headers(self) -> Dict:
         """Get headers for API requests"""
@@ -60,7 +52,7 @@ class MTNMoMo:
             response.raise_for_status()
             
             data = response.json()
-            self.logger.info(f"Transaction {transaction_id} checked successfully")
+            logger.info(f"Transaction {transaction_id} checked successfully")
             
             return {
                 'date': data.get('date'),
@@ -69,7 +61,7 @@ class MTNMoMo:
             }
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to check transaction {transaction_id}: {str(e)}")
+            logger.error(f"Failed to check transaction {transaction_id}: {str(e)}")
             raise
 
     def get_last_transactions(self, phone_number: str, limit: int = 10) -> List[Dict]:
@@ -94,7 +86,7 @@ class MTNMoMo:
             response.raise_for_status()
             
             data = response.json()
-            self.logger.info(f"Last transactions for {phone_number} retrieved successfully")
+            logger.info(f"Last transactions for {phone_number} retrieved successfully")
             
             return [{
                 'date': transaction.get('date'),
@@ -103,7 +95,7 @@ class MTNMoMo:
             } for transaction in data.get('transactions', [])]
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to get last transactions for {phone_number}: {str(e)}")
+            logger.error(f"Failed to get last transactions for {phone_number}: {str(e)}")
             raise
 
     def request_payment(self, phone_number: str, amount: float, 
@@ -145,7 +137,7 @@ class MTNMoMo:
             response.raise_for_status()
             
             data = response.json()
-            self.logger.info(f"Payment request sent to {phone_number} successfully")
+            logger.info(f"Payment request sent to {phone_number} successfully")
             
             return {
                 'status': data.get('status'),
@@ -155,5 +147,5 @@ class MTNMoMo:
             }
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to request payment from {phone_number}: {str(e)}")
+            logger.error(f"Failed to request payment from {phone_number}: {str(e)}")
             raise 

@@ -1,10 +1,10 @@
 import requests
 from flask import Flask, request, Response
 from typing import Dict, Any, Optional, List
-import logging
 from datetime import datetime
 import os
 from pprint import pprint
+from loguru import logger
 
 class WhatsAppGreenClient:
     def __init__(self, instance_id: str, instance_token: str):
@@ -18,14 +18,6 @@ class WhatsAppGreenClient:
         self.instance_id = os.getenv('GREEN_API_INSTANCE_ID')
         self.instance_token = os.getenv('GREEN_API_INSTANCE_TOKEN')
         self.base_url = f"https://7105.api.green-api.com/waInstance{instance_id}"
-        
-        # Setup logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            filename=f'whatsapp_green_{datetime.now().strftime("%Y%m%d")}.log'
-        )
-        self.logger = logging.getLogger(__name__)
 
     def send_text_message(self, to: str, message: str) -> Dict:
         """
@@ -48,11 +40,11 @@ class WhatsAppGreenClient:
             )
             response.raise_for_status()
             
-            self.logger.info(f"Message sent successfully to {to}")
+            logger.info(f"Message sent successfully to {to}")
             return response.json()
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to send message to {to}: {str(e)}")
+            logger.error(f"Failed to send message to {to}: {str(e)}")
             raise
 
     def send_file(self, to: str, file_url: str, caption: Optional[str] = None) -> Dict:
@@ -81,11 +73,11 @@ class WhatsAppGreenClient:
             )
             response.raise_for_status()
             
-            self.logger.info(f"File sent successfully to {to}")
+            logger.info(f"File sent successfully to {to}")
             return response.json()
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to send file to {to}: {str(e)}")
+            logger.error(f"Failed to send file to {to}: {str(e)}")
             raise
 
     def send_location(self, to: str, latitude: float, longitude: float, name: Optional[str] = None) -> Dict:
@@ -115,11 +107,11 @@ class WhatsAppGreenClient:
             )
             response.raise_for_status()
             
-            self.logger.info(f"Location sent successfully to {to}")
+            logger.info(f"Location sent successfully to {to}")
             return response.json()
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to send location to {to}: {str(e)}")
+            logger.error(f"Failed to send location to {to}: {str(e)}")
             raise
 
     def setup_webhook(self, app: Flask, path: str, webhook_token: str):
@@ -138,7 +130,7 @@ class WhatsAppGreenClient:
                 # Check for authentication token in headers
                 auth_header = request.headers.get('authorization')
                 if not auth_header or auth_header != f"Bearer {webhook_token}":
-                    self.logger.warning("Unauthorized webhook attempt")
+                    logger.warning("Unauthorized webhook attempt")
                     return Response("Unauthorized", status=401)
                 
                 data = request.get_json()
@@ -151,7 +143,7 @@ class WhatsAppGreenClient:
                 return Response(status=200)
                 
             except Exception as e:
-                self.logger.error(f"Error in webhook: {str(e)}")
+                logger.error(f"Error in webhook: {str(e)}")
                 return Response(status=500)
 
     def _handle_message(self, message_data: Dict):
@@ -169,21 +161,21 @@ class WhatsAppGreenClient:
             
             if message_type == 'textMessage':
                 text = message_data.get('messageData').get('textMessageData', {}).get('textMessage', '')
-                self.logger.info(f"Received text message from {sender}: {text}")
+                logger.info(f"Received text message from {sender}: {text}")
                 self._process_text_message(sender_name, chat_name, text)
                 
             elif message_type == 'fileMessage':
                 file_data = message_data.get('messageData').get('fileMessageData', {})
-                self.logger.info(f"Received file from {sender}")
+                logger.info(f"Received file from {sender}")
                 self._process_file_message(sender, chat_name, file_data)
                 
             elif message_type == 'locationMessage':
                 location_data = message_data.get('messageData').get('locationMessageData', {})
-                self.logger.info(f"Received location from {sender}")
+                logger.info(f"Received location from {sender}")
                 self._process_location_message(sender, chat_name, location_data)
                 
         except Exception as e:
-            self.logger.error(f"Error handling message: {str(e)}")
+            logger.error(f"Error handling message: {str(e)}")
 
     def _process_text_message(self, sender: str, chat_name: str, text: str):
         """Override this method to handle text messages"""
@@ -206,5 +198,5 @@ class WhatsAppGreenClient:
             return response.json()
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to get instance status: {str(e)}")
+            logger.error(f"Failed to get instance status: {str(e)}")
             raise 

@@ -2,8 +2,10 @@
 .venv
 *.pyc
 *.log
+*.zip
 
 *.egg-info
 *.egg
 
 build
+*__pycache__*

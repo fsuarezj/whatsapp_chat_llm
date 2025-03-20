@@ -2,8 +2,8 @@ import requests
 from flask import Flask, request, Response
 from typing import Dict, Any, Optional, List
 import json
-import logging
 from datetime import datetime
+from loguru import logger
 
 class WhatsAppBusinessClient:
     def __init__(self, token: str, phone_number_id: str, version: str = 'v17.0'):
@@ -22,14 +22,6 @@ class WhatsAppBusinessClient:
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-        
-        # Setup logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            filename=f'whatsapp_{datetime.now().strftime("%Y%m%d")}.log'
-        )
-        self.logger = logging.getLogger(__name__)
 
     def send_text_message(self, to: str, message: str, preview_url: bool = False) -> Dict:
         """
@@ -59,11 +51,11 @@ class WhatsAppBusinessClient:
             )
             response.raise_for_status()
             
-            self.logger.info(f"Message sent successfully to {to}")
+            logger.info(f"Message sent successfully to {to}")
             return response.json()
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to send message to {to}: {str(e)}")
+            logger.error(f"Failed to send message to {to}: {str(e)}")
             raise
 
     def send_template_message(self, to: str, template_name: str, 
@@ -101,11 +93,11 @@ class WhatsAppBusinessClient:
             )
             response.raise_for_status()
             
-            self.logger.info(f"Template message sent successfully to {to}")
+            logger.info(f"Template message sent successfully to {to}")
             return response.json()
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to send template message to {to}: {str(e)}")
+            logger.error(f"Failed to send template message to {to}: {str(e)}")
             raise
 
     def send_media_message(self, to: str, media_type: str, media_url: str, 
@@ -140,11 +132,11 @@ class WhatsAppBusinessClient:
             )
             response.raise_for_status()
             
-            self.logger.info(f"Media message sent successfully to {to}")
+            logger.info(f"Media message sent successfully to {to}")
             return response.json()
             
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to send media message to {to}: {str(e)}")
+            logger.error(f"Failed to send media message to {to}: {str(e)}")
             raise
 
     def setup_webhook(self, app: Flask, path: str, verify_token: str):
@@ -165,7 +157,7 @@ class WhatsAppBusinessClient:
 
             if mode and token:
                 if mode == 'subscribe' and token == verify_token:
-                    self.logger.info('Webhook verified successfully')
+                    logger.info('Webhook verified successfully')
                     return challenge
                 return Response(status=403)
 
@@ -206,21 +198,21 @@ class WhatsAppBusinessClient:
             
             if msg_type == 'text':
                 text = message.get('text', {}).get('body', '')
-                self.logger.info(f"Received text message from {from_number}: {text}")
+                logger.info(f"Received text message from {from_number}: {text}")
                 self._process_text_message(from_number, text)
                 
             elif msg_type in ['image', 'video', 'audio', 'document']:
                 media_id = message.get(msg_type, {}).get('id')
-                self.logger.info(f"Received {msg_type} message from {from_number}")
+                logger.info(f"Received {msg_type} message from {from_number}")
                 self._process_media_message(from_number, msg_type, media_id)
                 
             elif msg_type == 'location':
                 location = message.get('location', {})
-                self.logger.info(f"Received location from {from_number}")
+                logger.info(f"Received location from {from_number}")
                 self._process_location_message(from_number, location)
                 
         except Exception as e:
-            self.logger.error(f"Error handling message: {str(e)}")
+            logger.error(f"Error handling message: {str(e)}")
 
     def _process_text_message(self, from_number: str, text: str):
         """Override this method to handle text messages"""
@@ -239,7 +231,7 @@ class WhatsAppBusinessClient:
         try:
             status_type = status.get('status')
             message_id = status.get('id')
-            self.logger.info(f"Message {message_id} status: {status_type}")
+            logger.info(f"Message {message_id} status: {status_type}")
             
         except Exception as e:
-            self.logger.error(f"Error handling status update: {str(e)}")
+            logger.error(f"Error handling status update: {str(e)}")

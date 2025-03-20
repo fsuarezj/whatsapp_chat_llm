@@ -6,12 +6,14 @@ from chat_clients.whatsapp_green_client import WhatsAppGreenClient
 from mtn_momo import MTNMoMo
 import requests
 import time
+from loguru_config import LoguruConfig
 
 # Load environment variables
 dotenv.load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
+
 
 # Create a custom client by inheriting from WhatsAppGreenClient
 class MyWhatsAppClient(WhatsAppGreenClient):
@@ -88,6 +90,8 @@ def set_webhook_url():
         print(f"Failed to set webhook URL: {str(e)}")
 
 if __name__ == '__main__':
+    # Initialize Loguru
+    #LoguruConfig.load("loguru.yaml")
 
     # Initialize WhatsApp client
     whatsapp = MyWhatsAppClient(
