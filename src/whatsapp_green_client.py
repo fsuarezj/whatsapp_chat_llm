@@ -1,7 +1,6 @@
 import requests
 from flask import Flask, request, Response
 from typing import Dict, Any, Optional, List
-import json
 import logging
 from datetime import datetime
 import os
