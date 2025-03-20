@@ -4,6 +4,8 @@ import os
 from typing import Dict
 from whatsapp_green_client import WhatsAppGreenClient
 from mtn_momo import MTNMoMo
+import requests
+import time
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -75,9 +77,14 @@ def send_file():
         return {'error': str(e)}, 500
 
 if __name__ == '__main__':
-    # Check instance status before starting
-    status = whatsapp.get_instance_status()
-    print(f"Instance status: {status}")
+    try:
+        status = whatsapp.get_instance_status()
+        print(f"Instance status: {status}")
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            print("Rate limit reached. Waiting before retrying...")
+            time.sleep(5)  # Wait 5 seconds before continuing
+    
     whatsapp.send_text_message(
         to='34696864400',
         message='Hello from Green API!'
