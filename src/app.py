@@ -7,7 +7,7 @@ from mtn_momo import MTNMoMo
 import requests
 import time
 from loguru_config import LoguruConfig
-from chatbot.agents.shop_assistant import ShopAssistant
+from chatbot.assistant import Assistant
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -20,7 +20,7 @@ app = Flask(__name__)
 class MyWhatsAppClient(WhatsAppGreenClient):
     def __init__(self, instance_id: str, instance_token: str):
         super().__init__(instance_id, instance_token)
-        self.assistant = ShopAssistant()
+        self.assistant = Assistant()
 
     def _process_text_message(self, sender: str, chat_name: str, text: str):
         """Handle incoming text messages"""
