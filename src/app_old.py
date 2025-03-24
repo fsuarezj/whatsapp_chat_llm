@@ -7,7 +7,6 @@ from mtn_momo import MTNMoMo
 import requests
 import time
 from loguru_config import LoguruConfig
-from chatbot.agents.shop_assistant import ShopAssistant
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -18,10 +17,6 @@ app = Flask(__name__)
 
 # Create a custom client by inheriting from WhatsAppGreenClient
 class MyWhatsAppClient(WhatsAppGreenClient):
-    def __init__(self, instance_id: str, instance_token: str):
-        super().__init__(instance_id, instance_token)
-        self.assistant = ShopAssistant()
-
     def _process_text_message(self, sender: str, chat_name: str, text: str):
         """Handle incoming text messages"""
         print(f"✨ New message received!")
@@ -30,12 +25,7 @@ class MyWhatsAppClient(WhatsAppGreenClient):
         else:
             print(f"From: {sender}")
         print(f"Message: {text}")
-        response = self.assistant.generate_stream_response(text)
-        complete_response = ""
-        for chunk in response:
-            print(chunk)
-            complete_response += chunk
-        self.send_text_message(sender, complete_response)
+            
         # Auto-reply
         self.send_text_message(sender, f"Thanks for your message: {text}")
 
@@ -57,6 +47,31 @@ momo = MTNMoMo(
     primary_key='your_primary_key',
     environment='sandbox'  # or 'production'
 )
+
+# Example: Send a message
+@app.route('/send_message', methods=['POST'])
+def send_message():
+    try:
+        response = whatsapp.send_text_message(
+            to='34696864400',
+            message='Hello from Green API!'
+        )
+        return response
+    except Exception as e:
+        return {'error': str(e)}, 500
+
+# Example: Send a file
+@app.route('/send_file', methods=['POST'])
+def send_file():
+    try:
+        response = whatsapp.send_file(
+            to='1234567890',
+            file_url='https://example.com/file.pdf',
+            caption='Check this out!'
+        )
+        return response
+    except Exception as e:
+        return {'error': str(e)}, 500
 
 def set_webhook_url():
     # Your Codespace public URL + /webhook
