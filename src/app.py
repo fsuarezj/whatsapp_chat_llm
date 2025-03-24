@@ -25,7 +25,7 @@ class MyWhatsAppClient(WhatsAppGreenClient):
     def _process_text_message(self, sender: str, chat_name: str, text: str):
         """Handle incoming text messages"""
         print(f"✨ New message received!")
-        if chat_name != sender:
+        if chat_name == sender:
             print(f"Message in group {chat_name} from: {sender}")
         else:
             print(f"From: {sender}")

@@ -134,6 +134,7 @@ class WhatsAppGreenClient:
                     return Response("Unauthorized", status=401)
                 
                 data = request.get_json()
+                pprint(data)
                 
                 if data.get('typeWebhook') == 'incomingMessageReceived':
                     message_data = data.get('messageData', {})
