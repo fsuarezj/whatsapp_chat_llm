@@ -147,7 +147,7 @@ class ShopAssistant(CostCalculatorMixin):
         self._runnable = AgentExecutor(
             agent=agent,
             tools=tools,
-            verbose=True  # Set to True to see the agent's thought process
+            verbose=False  # Set to True to see the agent's thought process
         )
     #    #self._runnable = self._include_langfuse_support(self._runnable)
 
