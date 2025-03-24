@@ -22,7 +22,7 @@ class MyWhatsAppClient(WhatsAppGreenClient):
         super().__init__(instance_id, instance_token)
         self.assistant = Assistant()
 
-    def _process_text_message(self, sender: str, chat_name: str, text: str):
+    def _process_text_message(self, sender: str, sender_name: str, chat_name: str, text: str):
         """Handle incoming text messages"""
         print(f"✨ New message received!")
         if chat_name == sender:

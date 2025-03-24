@@ -30,7 +30,7 @@ class WhatsAppGreenClient:
         try:
             endpoint = f"{self.base_url}/sendMessage/{self.instance_token}"
             payload = {
-                "chatId": f"{to}@c.us",
+                "chatId": f"{to}@c.us" if "@c.us" not in to else to,
                 "message": message
             }
             
@@ -162,7 +162,7 @@ class WhatsAppGreenClient:
             if message_type == 'textMessage':
                 text = message_data.get('messageData').get('textMessageData', {}).get('textMessage', '')
                 logger.info(f"Received text message from {sender}: {text}")
-                self._process_text_message(sender_name, chat_name, text)
+                self._process_text_message(sender, sender_name, chat_name, text)
                 
             elif message_type == 'fileMessage':
                 file_data = message_data.get('messageData').get('fileMessageData', {})
@@ -177,7 +177,7 @@ class WhatsAppGreenClient:
         except Exception as e:
             logger.error(f"Error handling message: {str(e)}")
 
-    def _process_text_message(self, sender: str, chat_name: str, text: str):
+    def _process_text_message(self, sender: str, sender_name: str, chat_name: str, text: str):
         """Override this method to handle text messages"""
         pass
 
