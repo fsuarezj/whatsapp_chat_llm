@@ -58,6 +58,12 @@ momo = MTNMoMo(
     environment='sandbox'  # or 'production'
 )
 
+
+@app.route('/')
+def hello_world():
+    return "Flesk is running!"
+
+
 def set_webhook_url():
     # Your Codespace public URL + /webhook
     codespace_url = "https://psychic-cod-vwgjv9xpj9fx4q7-3000.app.github.dev/webhook"  # Replace with your actual URL

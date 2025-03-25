@@ -1,7 +1,7 @@
 [project]
 name = "whatsapp-chat-llm"
 version = "0.1.0"
-description = "Add your description here"
+description = "Whatsapp app for chat with an llm"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
