@@ -112,7 +112,7 @@ if __name__ == '__main__':
     )
     
     #set_webhook_url()
-    app.run(port=3000, debug=True)
+    app.run(port=3000, debug=False)
 
 #transaction = momo.check_transaction('2')
 #print(f"Date: {transaction['date']}")
