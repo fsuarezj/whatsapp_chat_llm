@@ -112,6 +112,8 @@ if __name__ == '__main__':
     )
     
     #set_webhook_url()
+    # Only run the development server when executing this file directly
+    # This part won't run when deployed with Passenger
     app.run(port=3000, debug=False)
 
 #transaction = momo.check_transaction('2')

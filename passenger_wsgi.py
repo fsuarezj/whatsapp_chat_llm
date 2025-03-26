@@ -1,4 +1,3 @@
-from src.app import app as application
 from dotenv import load_dotenv
 
 import sys
@@ -10,5 +9,7 @@ INTERP = os.path.join(os.getenv('HOME'), 'whatsapp-chat-llm.xastrin.com/.venv/bi
 if sys.executable != INTERP:
     os.execl(INTERP, INTERP, *sys.argv)
 
-if __name__ == '__main__':
-    application.run() 
+from src.app import app as application
+
+#if __name__ == '__main__':
+#    application.run() 
