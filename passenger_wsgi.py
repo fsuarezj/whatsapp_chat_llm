@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import sys
 import os
 
@@ -6,6 +5,7 @@ def application(environ, start_response):
     start_response('200 OK', [('Content-Type', 'text/plain')])
     return [b'Hello, World!']
 
+#from dotenv import load_dotenv
 #load_dotenv()
 #print(os.getenv('HOME'))
 #INTERP = os.path.join(os.getenv('HOME'), 'whatsapp-chat-llm.xastrin.com/.venv/bin/python')
