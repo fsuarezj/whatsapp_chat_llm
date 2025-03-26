@@ -9,4 +9,4 @@ cat ~/.bash_profile
 export PATH=$HOME/.local/bin:$PATH
 source ~/.bash_profile
 
-echo @PATH > tmp.txt
+echo $PATH > tmp.txt
