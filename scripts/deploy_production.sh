@@ -12,4 +12,3 @@ source ~/.bash_profile
 echo $PATH > tmp.txt
 
 uv pip install . > pip-install.log
-uv run src/app.py > pip-run.log
