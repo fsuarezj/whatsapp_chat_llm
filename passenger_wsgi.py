@@ -6,7 +6,7 @@ import os
 
 load_dotenv()
 print(os.getenv('HOME'))
-INTERP = os.path.join(os.getenv('HOME'), 'whatsapp-chat-llm.xastring.com/.venv/bin/python')
+INTERP = os.path.join(os.getenv('HOME'), 'whatsapp-chat-llm.xastrin.com/.venv/bin/python')
 if sys.executable != INTERP:
     os.execl(INTERP, INTERP, *sys.argv)
 
