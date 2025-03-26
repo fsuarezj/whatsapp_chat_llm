@@ -1,6 +1,5 @@
 from src.app import app as application
 
-Uncomment if using virtual environment
 import sys
 import os
 INTERP = os.path.join(os.environ['HOME'], '.venv/bin/python')
