@@ -59,7 +59,7 @@ momo = MTNMoMo(
 )
 
 
-@app.route('/')
+@app.route('/hello')
 def hello_world():
     return "Flesk is running!"
 
