@@ -63,6 +63,18 @@ momo = MTNMoMo(
 def hello_world():
     return "Flesk is running!"
 
+# Example: Send a message
+@app.route('/send_message', methods=['POST'])
+def send_message():
+    try:
+        response = whatsapp.send_text_message(
+            to='34696864400',
+            message='Hello from Green API!'
+        )
+        return response
+    except Exception as e:
+        return {'error': str(e)}, 500
+
 
 def set_webhook_url():
     # Your Codespace public URL + /webhook
