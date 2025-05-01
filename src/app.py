@@ -66,7 +66,7 @@ def hello_world():
 
 def set_webhook_url():
     # Your Codespace public URL + /webhook
-    codespace_url = "https://psychic-cod-vwgjv9xpj9fx4q7-3000.app.github.dev/webhook"  # Replace with your actual URL
+    codespace_url = "https://staging-whatsapp-chat-llm/webhook"  # Replace with your actual URL
     instance_id = os.getenv('GREEN_API_INSTANCE_ID')
     instance_token = os.getenv('GREEN_API_INSTANCE_TOKEN')
     
