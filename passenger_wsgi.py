@@ -11,4 +11,4 @@ sys.path.insert(0, os.path.join(os.getcwd(), ApplicationDirectory))
 sys.path.insert(0, os.path.join(os.getcwd(), VirtualEnvDirectory, 'bin'))
 os.chdir(os.path.join(os.getcwd(), ApplicationDirectory))
 #os.environ.setdefault('DJANGO_SETTINGS_MODULE', ApplicationName + '.settings')
-from whatsapp-chat-llm.src.app import app as application
+from wcl.src.app import app as application
