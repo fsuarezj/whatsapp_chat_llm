@@ -1,7 +1,7 @@
 import sys
 import os
 
-ApplicationDirectory = 'whatsapp-chat-llm'
+ApplicationDirectory = 'wcl'
 #ApplicationName = 'app'
 VirtualEnvDirectory = '.venv'
 VirtualEnv = os.path.join(os.getcwd(), VirtualEnvDirectory, 'bin', 'python')
