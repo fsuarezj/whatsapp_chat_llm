@@ -1,0 +1,32 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Deploy to Production
+        run: |
+            # Deployment commands
+            echo "Deploying to production..."
+            # Install Python dependencies
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            
+            # Run the deployment script
+            python src/app.py
+            
+            echo "Deployment completed successfully"
+    env:
+        GREEN_API_INSTANCE_ID: ${{ secrets.GREEN_API_INSTANCE_ID }}
+        GREEN_API_INSTANCE_TOKEN: ${{ secrets.GREEN_API_INSTANCE_TOKEN }}
+        GREEN_API_WEBHOOK_TOKEN: ${{ secrets.GREEN_API_WEBHOOK_TOKEN }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

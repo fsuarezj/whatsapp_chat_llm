@@ -1,8 +1,8 @@
 import sys
 import os
 
-ApplicationDirectory = '.'
-ApplicationName = 'app'
+ApplicationDirectory = 'whatsapp-chat-llm'
+#ApplicationName = 'app'
 VirtualEnvDirectory = '.venv'
 VirtualEnv = os.path.join(os.getcwd(), VirtualEnvDirectory, 'bin', 'python')
 if sys.executable != VirtualEnv: os.execl(VirtualEnv, VirtualEnv, *sys.argv)

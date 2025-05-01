@@ -118,7 +118,6 @@ def get_payment_status(id: int) -> str:
 
 class ShopAssistant(CostCalculatorMixin):
 
-
     def __init__(self):
         super().__init__()
         prompt = [(i["role"], i["content"]) for i in prompt_shop_assistant["prompt"]]
