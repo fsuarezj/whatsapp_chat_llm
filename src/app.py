@@ -6,8 +6,12 @@ from chat_clients.whatsapp_green_client import WhatsAppGreenClient
 from mtn_momo import MTNMoMo
 import requests
 import time
+import loguru
 from loguru_config import LoguruConfig
 from chatbot.assistant import Assistant
+
+logger = loguru.logger
+LoguruConfig.load(os.path.join("src", "config", "loguru.yaml"))
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -19,12 +23,13 @@ app = Flask(__name__)
 # Create a custom client by inheriting from WhatsAppGreenClient
 class MyWhatsAppClient(WhatsAppGreenClient):
     def __init__(self, instance_id: str, instance_token: str):
+        logger.debug("Initializing Whatsapp Client")
         super().__init__(instance_id, instance_token)
         self.assistant = Assistant()
 
     def _process_text_message(self, sender: str, sender_name: str, chat_name: str, text: str):
         """Handle incoming text messages"""
-        print(f"✨ New message received!")
+        logger.info(f"✨ New message received!")
         if chat_name == sender:
             print(f"Message in group {chat_name} from: {sender}")
         else:
@@ -72,6 +77,7 @@ def hello_world():
 # Example: Send a message
 @app.route('/send_message', methods=['POST'])
 def send_message():
+    logger.debug("Sending message")
     try:
         response = whatsapp.send_text_message(
             to='34696864400',
