@@ -6,6 +6,9 @@ import os
 from pprint import pprint
 from loguru import logger
 
+from loguru_config import LoguruConfig
+LoguruConfig.load(os.path.join("src", "config", "loguru.yaml"))
+
 class WhatsAppGreenClient:
     def __init__(self, instance_id: str, instance_token: str):
         """
@@ -15,6 +18,7 @@ class WhatsAppGreenClient:
             instance_id: Your Green API Instance ID
             instance_token: Your Green API Instance Token
         """
+        logger.debug("Initializing WhatsAppGreenClient")
         self.instance_id = os.getenv('GREEN_API_INSTANCE_ID')
         self.instance_token = os.getenv('GREEN_API_INSTANCE_TOKEN')
         self.base_url = f"https://7105.api.green-api.com/waInstance{instance_id}"
@@ -123,6 +127,7 @@ class WhatsAppGreenClient:
             path: Webhook path
             webhook_token: Secret token for webhook authentication
         """
+        logger.debug("Setting up  webhook")
         @app.route(path, methods=['POST'])
         def webhook():
             """Handle incoming webhook events with authentication"""

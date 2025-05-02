@@ -6,11 +6,10 @@ from chat_clients.whatsapp_green_client import WhatsAppGreenClient
 from mtn_momo import MTNMoMo
 import requests
 import time
-import loguru
-from loguru_config import LoguruConfig
+from loguru import logger
 from chatbot.assistant import Assistant
 
-logger = loguru.logger
+from loguru_config import LoguruConfig
 LoguruConfig.load(os.path.join("src", "config", "loguru.yaml"))
 
 # Load environment variables
