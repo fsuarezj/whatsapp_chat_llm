@@ -58,6 +58,12 @@ momo = MTNMoMo(
     environment='sandbox'  # or 'production'
 )
 
+    # Initialize WhatsApp client
+whatsapp = MyWhatsAppClient(
+    instance_id=os.getenv('GREEN_API_INSTANCE_ID'),
+    instance_token=os.getenv('GREEN_API_INSTANCE_TOKEN')
+)
+
 
 @app.route('/hello')
 def hello_world():
@@ -95,12 +101,6 @@ def set_webhook_url():
 if __name__ == '__main__':
     # Initialize Loguru
     #LoguruConfig.load("loguru.yaml")
-
-    # Initialize WhatsApp client
-    whatsapp = MyWhatsAppClient(
-        instance_id=os.getenv('GREEN_API_INSTANCE_ID'),
-        instance_token=os.getenv('GREEN_API_INSTANCE_TOKEN')
-    )
 
     # Setup webhook with authentication
     WEBHOOK_TOKEN = os.getenv('GREEN_API_WEBHOOK_TOKEN')  # Add this to your .env file
