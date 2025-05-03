@@ -7,8 +7,5 @@
 # Make sure that you have your ~/.local/bin early in your path:
 #cat ~/.bash_profile 
 #export PATH=$HOME/.local/bin:$PATH
-source ~/.bash_profile
-
-echo $PATH > tmp.txt
-
-uv pip install . > pip-install.log
+mv scripts/.htaccess ..
+mv scripts/passenger_wsgi ..
