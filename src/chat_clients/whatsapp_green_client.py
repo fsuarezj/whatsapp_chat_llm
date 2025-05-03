@@ -131,15 +131,17 @@ class WhatsAppGreenClient:
         @app.route(path, methods=['POST'])
         def webhook():
             """Handle incoming webhook events with authentication"""
+            logger.info("Received POST to /webhook")
             try:
                 # Check for authentication token in headers
                 auth_header = request.headers.get('authorization')
                 if not auth_header or auth_header != f"Bearer {webhook_token}":
                     logger.warning("Unauthorized webhook attempt")
                     return Response("Unauthorized", status=401)
+                logger.info("Authorized webhook")
                 
                 data = request.get_json()
-                pprint(data)
+                logger.debug(f"Payload: {data}")
                 
                 if data.get('typeWebhook') == 'incomingMessageReceived':
                     message_data = data.get('messageData', {})

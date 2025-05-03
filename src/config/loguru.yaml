@@ -10,6 +10,14 @@ handlers:
     compression: "zip"
     enqueue: true
     serialize: true
+    # Whatsapp Green Client logs
+  - sink: logs/whatsapp_green_client.log
+    rotation: "00:00"
+    delay: True
+    compression: "zip"
+    enqueue: true
+    serialize: true
+    filter: "src.chat_clients.whatsapp_green_client"
     # Training sets log
   #- sink: logs/training_sets/training_sets.log
   #  format: ""
