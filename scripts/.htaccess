@@ -1,13 +1,15 @@
+# Enable Passenger
 PassengerEnabled on
-
-# Deny access to all files by default
-<FilesMatch ".*">
-    Order deny,allow
+# Deny access to sensitive files
+<FilesMatch "\.(log|py|pyc|pyo|env|venv|cfg|ini|db|sqlite3|json|yml|yaml)$">
+    Order allow,deny
     Deny from all
 </FilesMatch>
 
-# Allow access to static files (adjust as needed)
-<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$">
-    Order allow,deny
-    Allow from all
-</FilesMatch>
+# Deny access to hidden files and backup files
+RedirectMatch 404 /\.|^.*~$
+
+# Deny access to sensitive directories
+RedirectMatch 404 /(\.venv|venv|tmp|logs)/
+
+# Allow everything else (so Passenger/Flask can handle it)
