@@ -68,14 +68,6 @@ whatsapp = MyWhatsAppClient(
     instance_token=os.getenv('GREEN_API_INSTANCE_TOKEN')
 )
 
-# Setup webhook with authentication (runs on import)
-WEBHOOK_TOKEN = os.getenv('GREEN_API_WEBHOOK_TOKEN')
-whatsapp.setup_webhook(
-    app=app,
-    path='/webhook',
-    webhook_token=WEBHOOK_TOKEN
-)
-
 # Check instance status (optional, but be careful with side effects)
 try:
     status = whatsapp.get_instance_status()
@@ -107,6 +99,39 @@ def send_message():
         return response
     except Exception as e:
         return {'error': str(e)}, 500
+
+# Setup webhook with authentication (runs on import)
+WEBHOOK_TOKEN = os.getenv('GREEN_API_WEBHOOK_TOKEN')
+#whatsapp.setup_webhook(
+#    app=app,
+#    path='/webhook',
+#    webhook_token=WEBHOOK_TOKEN
+#)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    """Handle incoming webhook events with authentication"""
+    logger.info("Received POST to /webhook")
+    try:
+        # Check for authentication token in headers
+        auth_header = request.headers.get('authorization')
+        if not auth_header or auth_header != f"Bearer {WEBHOOK_TOKEN}":
+            logger.warning("Unauthorized webhook attempt")
+            return Response("Unauthorized", status=401)
+        logger.info("Authorized webhook")
+        
+        data = request.get_json()
+        logger.debug(f"Payload: {data}")
+        
+        if data.get('typeWebhook') == 'incomingMessageReceived':
+            message_data = data.get('messageData', {})
+            whatsapp._handle_message(data)
+            
+        return Response(status=200)
+        
+    except Exception as e:
+        logger.error(f"Error in webhook: {str(e)}")
+        return Response(status=500)
 
 
 def set_webhook_url():

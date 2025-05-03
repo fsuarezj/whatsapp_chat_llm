@@ -18,6 +18,13 @@ handlers:
     enqueue: true
     serialize: true
     filter: "chat_clients.whatsapp_green_client"
+  - sink: logs/flask_app.log
+    rotation: "00:00"
+    delay: True
+    compression: "zip"
+    enqueue: true
+    serialize: true
+    filter: "app"
     # Training sets log
   #- sink: logs/training_sets/training_sets.log
   #  format: ""
