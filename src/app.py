@@ -62,12 +62,34 @@ momo = MTNMoMo(
     environment='sandbox'  # or 'production'
 )
 
-    # Initialize WhatsApp client
+# Initialize WhatsApp client
 whatsapp = MyWhatsAppClient(
     instance_id=os.getenv('GREEN_API_INSTANCE_ID'),
     instance_token=os.getenv('GREEN_API_INSTANCE_TOKEN')
 )
 
+# Setup webhook with authentication (runs on import)
+WEBHOOK_TOKEN = os.getenv('GREEN_API_WEBHOOK_TOKEN')
+whatsapp.setup_webhook(
+    app=app,
+    path='/webhook',
+    webhook_token=WEBHOOK_TOKEN
+)
+
+# Check instance status (optional, but be careful with side effects)
+try:
+    status = whatsapp.get_instance_status()
+    logger.info(f"Instance status: {status}")
+except requests.exceptions.HTTPError as e:
+    if e.response.status_code == 429:
+        logger.error("Rate limit reached. Waiting before retrying...")
+        time.sleep(5)
+
+# Optionally send a startup message (be careful with side effects in production)
+whatsapp.send_text_message(
+    to='34696864400',
+    message='Starting the server'
+)
 
 @app.route('/hello')
 def hello_world():
@@ -107,27 +129,6 @@ if __name__ == '__main__':
     # Initialize Loguru
     #LoguruConfig.load("loguru.yaml")
 
-    # Setup webhook with authentication
-    WEBHOOK_TOKEN = os.getenv('GREEN_API_WEBHOOK_TOKEN')  # Add this to your .env file
-    whatsapp.setup_webhook(
-        app=app,
-        path='/webhook',
-        webhook_token=WEBHOOK_TOKEN
-    )
-
-    try:
-        status = whatsapp.get_instance_status()
-        print(f"Instance status: {status}")
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 429:
-            print("Rate limit reached. Waiting before retrying...")
-            time.sleep(5)  # Wait 5 seconds before continuing
-    
-    whatsapp.send_text_message(
-        to='34696864400',
-        message='Starting the server'
-    )
-    
     #set_webhook_url()
     # Only run the development server when executing this file directly
     # This part won't run when deployed with Passenger
