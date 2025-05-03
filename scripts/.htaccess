@@ -1,13 +1,13 @@
 PassengerEnabled on
 
-# Deny access to logs, config, and source files
-<FilesMatch "\.(log|py|pyc|pyo|env|venv|cfg|ini|db|sqlite3|json|yml|yaml)$">
-    Order allow,deny
+# Deny access to all files by default
+<FilesMatch ".*">
+    Order deny,allow
     Deny from all
 </FilesMatch>
 
-# Deny access to .git and other hidden files/folders
-RedirectMatch 404 /\.|^.*~$
-
-# (Optional) Deny access to the tmp and venv folders
-RedirectMatch 404 /(\.venv|venv|tmp|logs)/
+# Allow access to static files (adjust as needed)
+<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
