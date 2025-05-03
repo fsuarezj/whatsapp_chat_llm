@@ -8,4 +8,4 @@
 #cat ~/.bash_profile 
 #export PATH=$HOME/.local/bin:$PATH
 mv scripts/.htaccess ..
-mv scripts/passenger_wsgi ..
+mv scripts/passenger_wsgi.py ..
