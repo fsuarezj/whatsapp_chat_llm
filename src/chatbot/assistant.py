@@ -14,7 +14,6 @@ from langchain_core.messages.ai import AIMessage
 from loguru import logger
 #from pandas import Series
 from dotenv import load_dotenv
-from pprint import pformat
 import uuid
 import os
 import types

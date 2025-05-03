@@ -41,7 +41,7 @@ class MyWhatsAppClient(WhatsAppGreenClient):
             complete_response += chunk
         self.send_text_message(sender, complete_response)
         # Auto-reply
-        self.send_text_message(sender, f"Thanks for your message: {text}")
+        #self.send_text_message(sender, f"Thanks for your message: {text}")
 
     def _process_file_message(self, sender: str, chat_name: str, file_data: Dict):
         """Handle incoming file messages"""

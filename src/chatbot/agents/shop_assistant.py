@@ -84,7 +84,19 @@ def get_price(item: str, quantity: int) -> int:
     Returns:
         float: The price of the item.
     """
-    return 1000 * quantity
+    prices = {}
+    prices[Product.drinking] = 20000
+    prices[Product.regular] = 20000
+    prices[Product.greek] = 20000
+    prices[Product.strawberry] = 25000
+    prices[Product.mango] = 25000
+    prices[Product.vanilla] = 25000
+    prices[Product.labneh] = 20000
+    prices[Product.labneh_deluxe] = 15000
+    prices[Product.cottage] = 20000
+    prices[Product.sour_milk] = 20000
+
+    return prices[item] * quantity
 
 @tool
 def get_total_price(order: List[OrderItem]) -> int:
@@ -98,6 +110,7 @@ def get_total_price(order: List[OrderItem]) -> int:
     Returns:
         float: The total price of the order.
     """
+    logger.info("Calculating price")
     return sum(get_price(item.product, item.quantity) for item in order)
 
 @tool
@@ -119,6 +132,7 @@ def get_payment_status(id: int) -> str:
 class ShopAssistant(CostCalculatorMixin):
 
     def __init__(self):
+        logger.debug("Initializing shop assistant")
         super().__init__()
         prompt = [(i["role"], i["content"]) for i in prompt_shop_assistant["prompt"]]
         system_prompt = list(filter(lambda x: x[0] == "system", prompt))

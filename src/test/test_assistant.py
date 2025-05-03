@@ -5,6 +5,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import Optional
 import traceback
 
+from loguru import logger
+from loguru_config import LoguruConfig
+LoguruConfig.load(os.path.join("src", "config", "loguru.yaml"))
+
 def create_test_assistant() -> Optional['Assistant']:
     try:
         from chatbot.assistant import Assistant
@@ -23,6 +27,9 @@ def interactive_chat():
     if not assistant:
         sys.exit(1)
 
+    cls = assistant.__class__
+    module = sys.modules[cls.__module__]
+    print("Source file for Assistant:", module.__file__)
     print("=== Assistant Test Chat ===")
     print("Type 'quit' or 'exit' to end the conversation")
     print("Type 'clear' to start a new conversation")
