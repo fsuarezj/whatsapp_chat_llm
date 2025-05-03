@@ -1,7 +1,8 @@
-# Enable Passenger
+# Enable Passenger for this directory
 PassengerEnabled on
-# Deny access to sensitive files
-<FilesMatch "\.(log|py|pyc|pyo|env|venv|cfg|ini|db|sqlite3|json|yml|yaml)$">
+
+# Deny access to sensitive file extensions
+<FilesMatch "\.(py|pyc|pyo|sh|bat|ps1|log|env|venv|cfg|ini|db|sqlite3|json|yml|yaml|toml|lock|txt|rst|md)$">
     Order allow,deny
     Deny from all
 </FilesMatch>
@@ -10,6 +11,10 @@ PassengerEnabled on
 RedirectMatch 404 /\.|^.*~$
 
 # Deny access to sensitive directories
-RedirectMatch 404 /(\.venv|venv|tmp|logs)/
+RedirectMatch 404 /(\.venv|venv|logs|build|src|config|test|chat_clients|chatbot|whatsapp_chat_llm\.egg-info|__pycache__)/
 
-# Allow everything else (so Passenger/Flask can handle it)
+# (Optional) Allow access to static files if you add a static/ directory in the future
+# <Directory "static">
+#     Order allow,deny
+#     Allow from all
+# </Directory>
