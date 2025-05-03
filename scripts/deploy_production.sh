@@ -9,3 +9,4 @@
 #export PATH=$HOME/.local/bin:$PATH
 mv scripts/.htaccess ..
 mv scripts/passenger_wsgi.py ..
+passenger-config restart-app /var/www/vhosts/xastrin.com/staging-whatsapp-chat-llm.xastrin.com
