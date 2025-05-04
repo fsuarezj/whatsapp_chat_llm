@@ -125,7 +125,7 @@ def webhook():
         
         if data.get('typeWebhook') == 'incomingMessageReceived':
             message_data = data.get('messageData', {})
-            whatsapp._handle_message(data)
+            whatsapp.handle_message(data)
             
         return Response(status=200)
         

@@ -153,6 +153,46 @@ class WhatsAppGreenClient:
                 logger.error(f"Error in webhook: {str(e)}")
                 return Response(status=500)
 
+    def handle_message(message_data: Dict):
+        """
+        Handle different types of incoming messages
+        
+        Args:
+            message_data: Message data from webhook
+        """
+        try:
+            logger.debug("Handling incoming message")
+            message_type = message_data.get('messageData').get('typeMessage')
+            sender = message_data.get('senderData', {}).get('sender')
+            sender_name = message_data.get('senderData', {}).get('senderName')
+            chat_name = message_data.get('senderData', {}).get('chatName')
+            
+            if message_type == 'textMessage':
+                text = message_data.get('messageData').get('textMessageData', {}).get('textMessage', '')
+                logger.info(f"Received text message from {sender}: {text}")
+                self._process_text_message(sender, sender_name, chat_name, text)
+                
+            elif message_type == 'extendedTextMessage':
+                text = message_data.get('messageData').get('extendedTextMessageData', {}).get('text', '')
+                logger.info(f"Received text message from {sender}: {text}")
+                self._process_text_message(sender, sender_name, chat_name, text)
+                
+            elif message_type == 'fileMessage':
+                file_data = message_data.get('messageData').get('fileMessageData', {})
+                logger.info(f"Received file from {sender}")
+                self._process_file_message(sender, chat_name, file_data)
+                
+            elif message_type == 'locationMessage':
+                location_data = message_data.get('messageData').get('locationMessageData', {})
+                logger.info(f"Received location from {sender}")
+                self._process_location_message(sender, chat_name, location_data)
+            
+            else:
+                logger.error("Message couldn't be handled")
+                
+        except Exception as e:
+            logger.error(f"Error handling message: {str(e)}")
+
     def _handle_message(self, message_data: Dict):
         """
         Handle different types of incoming messages
