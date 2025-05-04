@@ -171,6 +171,11 @@ class WhatsAppGreenClient:
                 logger.info(f"Received text message from {sender}: {text}")
                 self._process_text_message(sender, sender_name, chat_name, text)
                 
+            elif message_type == 'extendedTextMessage':
+                text = message_data.get('messageData').get('extendedTextMessageData', {}).get('text', '')
+                logger.info(f"Received text message from {sender}: {text}")
+                self._process_text_message(sender, sender_name, chat_name, text)
+                
             elif message_type == 'fileMessage':
                 file_data = message_data.get('messageData').get('fileMessageData', {})
                 logger.info(f"Received file from {sender}")
@@ -180,6 +185,9 @@ class WhatsAppGreenClient:
                 location_data = message_data.get('messageData').get('locationMessageData', {})
                 logger.info(f"Received location from {sender}")
                 self._process_location_message(sender, chat_name, location_data)
+            
+            else:
+                logger.error("Message couldn't be handled")
                 
         except Exception as e:
             logger.error(f"Error handling message: {str(e)}")

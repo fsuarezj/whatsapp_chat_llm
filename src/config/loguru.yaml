@@ -24,7 +24,7 @@ handlers:
     compression: "zip"
     enqueue: true
     serialize: true
-    filter: "app"
+    filter: "wcl.src.app"
     # Training sets log
   #- sink: logs/training_sets/training_sets.log
   #  format: ""
