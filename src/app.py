@@ -102,36 +102,36 @@ def send_message():
 
 # Setup webhook with authentication (runs on import)
 WEBHOOK_TOKEN = os.getenv('GREEN_API_WEBHOOK_TOKEN')
-#whatsapp.setup_webhook(
-#    app=app,
-#    path='/webhook',
-#    webhook_token=WEBHOOK_TOKEN
-#)
+whatsapp.setup_webhook(
+    app=app,
+    path='/webhook',
+    webhook_token=WEBHOOK_TOKEN
+)
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    """Handle incoming webhook events with authentication"""
-    logger.debug("Received POST to /webhook")
-    try:
-        # Check for authentication token in headers
-        auth_header = request.headers.get('authorization')
-        if not auth_header or auth_header != f"Bearer {WEBHOOK_TOKEN}":
-            logger.warning("Unauthorized webhook attempt")
-            return Response("Unauthorized", status=401)
-        logger.debug("Authorized webhook")
-        
-        data = request.get_json()
-        logger.debug(f"Payload: {data}")
-        
-        if data.get('typeWebhook') == 'incomingMessageReceived':
-            message_data = data.get('messageData', {})
-            whatsapp.handle_message(data)
-            
-        return Response(status=200)
-        
-    except Exception as e:
-        logger.error(f"Error in webhook: {str(e)}")
-        return Response(status=500)
+#@app.route('/webhook', methods=['POST'])
+#def webhook():
+#    """Handle incoming webhook events with authentication"""
+#    logger.debug("Received POST to /webhook")
+#    try:
+#        # Check for authentication token in headers
+#        auth_header = request.headers.get('authorization')
+#        if not auth_header or auth_header != f"Bearer {WEBHOOK_TOKEN}":
+#            logger.warning("Unauthorized webhook attempt")
+#            return Response("Unauthorized", status=401)
+#        logger.debug("Authorized webhook")
+#        
+#        data = request.get_json()
+#        logger.debug(f"Payload: {data}")
+#        
+#        if data.get('typeWebhook') == 'incomingMessageReceived':
+#            message_data = data.get('messageData', {})
+#            whatsapp.handle_message(data)
+#            
+#        return Response(status=200)
+#        
+#    except Exception as e:
+#        logger.error(f"Error in webhook: {str(e)}")
+#        return Response(status=500)
 
 
 def set_webhook_url():
