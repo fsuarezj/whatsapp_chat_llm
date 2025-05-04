@@ -161,6 +161,7 @@ class WhatsAppGreenClient:
             message_data: Message data from webhook
         """
         try:
+            logger.debug("Handling incoming message")
             message_type = message_data.get('messageData').get('typeMessage')
             sender = message_data.get('senderData', {}).get('sender')
             sender_name = message_data.get('senderData', {}).get('senderName')

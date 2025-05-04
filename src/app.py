@@ -111,14 +111,14 @@ WEBHOOK_TOKEN = os.getenv('GREEN_API_WEBHOOK_TOKEN')
 @app.route('/webhook', methods=['POST'])
 def webhook():
     """Handle incoming webhook events with authentication"""
-    logger.info("Received POST to /webhook")
+    logger.debug("Received POST to /webhook")
     try:
         # Check for authentication token in headers
         auth_header = request.headers.get('authorization')
         if not auth_header or auth_header != f"Bearer {WEBHOOK_TOKEN}":
             logger.warning("Unauthorized webhook attempt")
             return Response("Unauthorized", status=401)
-        logger.info("Authorized webhook")
+        logger.debug("Authorized webhook")
         
         data = request.get_json()
         logger.debug(f"Payload: {data}")
