@@ -153,7 +153,7 @@ class WhatsAppGreenClient:
                 logger.error(f"Error in webhook: {str(e)}")
                 return Response(status=500)
 
-    def handle_message(message_data: Dict):
+    def handle_message(self, message_data: Dict):
         """
         Handle different types of incoming messages
         
