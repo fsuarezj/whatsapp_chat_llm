@@ -30,9 +30,18 @@ class Product(str, Enum):
     cottage = "Cottage cheese"
     sour_milk = "Sour milk"
 
+class Modality(str, Enum):
+    delivery = "Delivery"
+    pickup = "Pick-up"
+
 class OrderItem(BaseModel):
     product: Product
     quantity: int
+
+class Order(BaseModel):
+    items: List[OrderItem]
+    modality: Modality
+
 
 #    @model_validator(mode="wrap")
 #    @classmethod
@@ -46,7 +55,7 @@ class OrderItem(BaseModel):
 #        return result
 
 @tool
-def process_order(order: List[OrderItem]) -> None:
+def process_order(order: Order) -> None:
     """
     Process an order by iterating through items and their quantities.
 
@@ -70,8 +79,9 @@ def process_order(order: List[OrderItem]) -> None:
         - Warning level log for each item being processed
     """
     logger.warning(f"Processing order: {order}")
-    for item in order:
+    for item in order.items:
         logger.warning(f"Processing {item.quantity} units of {item.product}")
+    logger.warning(f"Order modality is {order.modality}")
 
 def get_price(item: str, quantity: int) -> int:
     """
