@@ -23,8 +23,8 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     db.init_app(app)
     # Register blueprints
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(products_bp)
+    #app.register_blueprint(auth_bp)
+    #app.register_blueprint(products_bp)
     app.register_blueprint(whatsapp_chat_bp)
     with app.app_context():
         db.create_all()  # This will create tables if they do not exist
