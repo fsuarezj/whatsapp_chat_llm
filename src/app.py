@@ -1,8 +1,8 @@
 from flask import Flask
 from models import db
-from src.routes.auth import auth_bp
-from src.routes.products import products_bp
-from src.routes.whatsapp_chat import whatsapp_chat_bp, setup_chat_webhook
+#from routes.auth import auth_bp
+#from routes.products import products_bp
+from routes.whatsapp_chat import whatsapp_chat_bp, setup_chat_webhook
 
 from mtn_momo import MTNMoMo
 from chat_clients.my_whatsapp_client import MyWhatsAppClient
@@ -20,12 +20,14 @@ dotenv.load_dotenv()
 def create_app():
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-    app.config['SECRET_KEY'] = 'your-secret-key'
+    app.config['SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     db.init_app(app)
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(products_bp)
     app.register_blueprint(whatsapp_chat_bp)
+    with app.app_context():
+        db.create_all()  # This will create tables if they do not exist
     return app
 
 def init_clients():
@@ -45,8 +47,8 @@ app = create_app()
 whatsapp, momo = init_clients()
 
 # Inject whatsapp client into chat blueprint
-import src.routes.whatsapp_chat
-src.routes.whatsapp_chat.whatsapp = whatsapp
+import routes.whatsapp_chat
+routes.whatsapp_chat.whatsapp = whatsapp
 
 # Setup webhook with authentication (runs on import)
 setup_chat_webhook(app, whatsapp)
