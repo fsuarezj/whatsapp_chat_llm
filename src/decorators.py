@@ -12,7 +12,8 @@ def jwt_required(f):
         token = auth_header.split(' ')[1]
         try:
             payload = jwt.decode(token, current_app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
-            user_id = payload['username']
+            logger.info(f"Payload: {payload}")
+            user_id = payload['sub']
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, KeyError) as e:
             logger.error(f"Error decoding token: {e}")
             return jsonify({'error': 'Invalid or expired token'}), 401
