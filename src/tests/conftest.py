@@ -2,6 +2,9 @@ import pytest
 from flask import Flask
 from models import db
 import os
+import dotenv
+
+dotenv.load_dotenv()
 
 @pytest.fixture
 def app():
