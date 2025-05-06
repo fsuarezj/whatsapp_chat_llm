@@ -1,11 +1,7 @@
-from flask import Flask
-from models import db
-#from routes.auth import auth_bp
-#from routes.products import products_bp
+from routes.auth import auth_bp
+from routes.products import products_bp
 from routes.whatsapp_chat import whatsapp_chat_bp, setup_chat_webhook
-
-from mtn_momo import MTNMoMo
-from chat_clients.my_whatsapp_client import MyWhatsAppClient
+from app_factory import create_app, init_clients, register_error_handlers
 
 import dotenv
 import os
@@ -17,34 +13,14 @@ LoguruConfig.load(os.path.join("src", "config", "loguru.yaml"))
 # Load environment variables
 dotenv.load_dotenv()
 
-def create_app():
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
-    db.init_app(app)
-    # Register blueprints
-#    app.register_blueprint(auth_bp)
-#    app.register_blueprint(products_bp)
-    app.register_blueprint(whatsapp_chat_bp)
-    with app.app_context():
-        db.create_all()  # This will create tables if they do not exist
-    return app
-
-def init_clients():
-    whatsapp = MyWhatsAppClient(
-        instance_id=os.getenv('GREEN_API_INSTANCE_ID'),
-        instance_token=os.getenv('GREEN_API_INSTANCE_TOKEN')
-    )
-    momo = MTNMoMo(
-        api_key='your_api_key',
-        user_id='your_user_id',
-        primary_key='your_primary_key',
-        environment='sandbox'
-    )
-    return whatsapp, momo
-
 app = create_app()
 whatsapp, momo = init_clients()
+register_error_handlers(app)
+# Register blueprints
+app.register_blueprint(auth_bp, url_prefix='/api')
+app.register_blueprint(products_bp, url_prefix='/api')
+app.register_blueprint(whatsapp_chat_bp, url_prefix='/api')
+
 
 # Inject whatsapp client into chat blueprint
 import routes.whatsapp_chat
@@ -62,7 +38,7 @@ whatsapp.send_text_message(
 #whatsapp.set_webhook_url("https://staging-whatsapp-chat-llm/webhook")
 
 if __name__ == '__main__':
-    app.run(port=3000, debug=False)
+    app.run(port=3000, debug=True)
 
 ## Check instance status (optional, but be careful with side effects)
 #try:
