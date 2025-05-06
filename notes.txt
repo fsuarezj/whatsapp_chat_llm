@@ -1,0 +1,10 @@
+- Test auth
+- Add delivery prices and time
+- Create interface for auth
+- Test products
+- Create interface for products
+- Add aliases to products (plain yoghurt)
+- Allow to request an "operator"
+- Check what happens if there are two orders at the same time
+- Make simple portal to manage orders
+- Make flow better, so it's sure that price is calculated (calculate it during processing?)
