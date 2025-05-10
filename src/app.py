@@ -1,6 +1,8 @@
 from routes.auth import auth_bp
 from routes.products import products_bp
 from routes.whatsapp_chat import whatsapp_chat_bp, setup_chat_webhook
+from routes.customers import customers_bp
+from routes.orders import orders_bp
 from app_factory import create_app, init_clients, register_error_handlers
 
 import dotenv
@@ -17,10 +19,11 @@ app = create_app()
 whatsapp, momo = init_clients()
 register_error_handlers(app)
 # Register blueprints
+app.register_blueprint(whatsapp_chat_bp, url_prefix='/api')
 app.register_blueprint(auth_bp, url_prefix='/api')
 app.register_blueprint(products_bp, url_prefix='/api')
-app.register_blueprint(whatsapp_chat_bp, url_prefix='/api')
-
+app.register_blueprint(customers_bp, url_prefix='/api')
+app.register_blueprint(orders_bp, url_prefix='/api')
 
 # Inject whatsapp client into chat blueprint
 import routes.whatsapp_chat

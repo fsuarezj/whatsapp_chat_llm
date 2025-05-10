@@ -3,7 +3,6 @@ from flask import Flask
 from models import db
 import os
 import dotenv
-from loguru import logger
 
 dotenv.load_dotenv()
 
@@ -27,14 +26,3 @@ def app():
 def session(app):
     with app.app_context():
         yield db.session
-
-def get_token(client):
-    client.post('/api/auth/register', json={
-        'email': 'prod@example.com',
-        'password': 'password123'
-    })
-    response = client.post('/api/auth/login', json={
-        'email': 'prod@example.com',
-        'password': 'password123'
-    })
-    return response.get_json()['access_token']
