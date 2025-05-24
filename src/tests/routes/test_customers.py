@@ -4,6 +4,7 @@ from models import db
 from models.customer_model import Customer
 from conftest import get_token, get_token_header
 from bs4 import BeautifulSoup
+from loguru import logger
 
 def test_create_customer(client):
     token = get_token(client)
@@ -18,9 +19,7 @@ def test_create_duplicated_customer(client, session):
     response = client.post("/api/customers", json={"name": "Diana", "phone_number": "1234567890"}, headers=get_token_header(token))
     response = client.post("/api/customers", json={"name": "Pepito", "phone_number": "1234567890"}, headers=get_token_header(token))
     assert response.status_code == 409
-    soup = BeautifulSoup(response.text, 'html.parser')
-    text = soup.find('p').text
-    assert text == "Customer with phone number 1234567890 already exists"
+    assert "Customer with phone number 1234567890 already exists" in response.get_json()['message']
 
 def test_update_customer(client, session):
     token = get_token(client)

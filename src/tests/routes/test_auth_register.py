@@ -16,19 +16,19 @@ def test_register_missing_username(client):
         'password': 'StrongPass1'
     })
     assert response.status_code == 400
-    assert 'error' in response.get_json()
+    assert 'Missing required fields' in response.get_json()['message']
 
 def test_register_missing_password(client):
     response = client.post('api/register', json={
         'username': 'testuser'
     })
     assert response.status_code == 400
-    assert 'error' in response.get_json()
+    assert 'Missing required fields' in response.get_json()['message']
 
 def test_register_no_data(client):
     response = client.post('api/register', json={})
     assert response.status_code == 400
-    assert 'error' in response.get_json()
+    assert 'Missing required fields' in response.get_json()['message']
 
 def test_register_weak_password(client):
     response = client.post('api/register', json={
@@ -36,7 +36,7 @@ def test_register_weak_password(client):
         'password': 'weak'
     })
     assert response.status_code == 400
-    assert 'error' in response.get_json()
+    assert 'Password does not meet complexity requirements' in response.get_json()['message']
 
 def test_register_existing_username(client):
     # First registration
@@ -49,8 +49,8 @@ def test_register_existing_username(client):
         'username': 'testuser',
         'password': 'AnotherStrong1'
     })
-    assert response.status_code == 400
-    assert response.get_json()['error'] == 'Username exists'
+    assert response.status_code == 409
+    assert 'Username already exists' in response.get_json()['message']
 
 def test_register_password_no_uppercase(client):
     response = client.post('api/register', json={

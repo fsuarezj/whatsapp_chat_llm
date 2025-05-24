@@ -1,22 +1,25 @@
 from functools import wraps
-from flask import request, jsonify, current_app
+from flask import current_app, g, request
 import jwt
-from loguru import logger
+from werkzeug.exceptions import Unauthorized
 
 def jwt_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth_header = request.headers.get('Authorization', None)
         if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({'error': 'Authorization header missing or invalid'}), 401
+            raise Unauthorized("Authorization header missing or invalid")
+
         token = auth_header.split(' ')[1]
         try:
-            payload = jwt.decode(token, current_app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
-            logger.info(f"Payload: {payload}")
-            user_id = payload['sub']
+            payload = jwt.decode(
+                token,
+                current_app.config['JWT_SECRET_KEY'],
+                algorithms=['HS256']
+            )
+            g.user_id = payload['sub']  # Optionally store in Flask's global context
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, KeyError) as e:
-            logger.error(f"Error decoding token: {e}")
-            return jsonify({'error': 'Invalid or expired token'}), 401
-        kwargs['user_id'] = user_id
-        return f(*args, **kwargs)
+            raise Unauthorized("Invalid or expired token")
+
+        return f(*args, user_id=payload['sub'], **kwargs)
     return decorated

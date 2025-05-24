@@ -1,10 +1,5 @@
-from routes.auth import auth_bp
-from routes.products import products_bp
-from routes.whatsapp_chat import whatsapp_chat_bp, setup_chat_webhook
-from routes.customers import customers_bp
-from routes.orders import orders_bp
-from app_factory import create_app, init_clients, register_error_handlers
-
+from routes.whatsapp_chat import setup_chat_webhook
+from app_factory import create_app, init_clients
 import dotenv
 import os
 from loguru import logger
@@ -15,30 +10,22 @@ LoguruConfig.load(os.path.join("src", "config", "loguru.yaml"))
 # Load environment variables
 dotenv.load_dotenv()
 
+# Initialize application
 app = create_app()
 whatsapp, momo = init_clients()
-register_error_handlers(app)
-# Register blueprints
-app.register_blueprint(whatsapp_chat_bp, url_prefix='/api')
-app.register_blueprint(auth_bp, url_prefix='/api')
-app.register_blueprint(products_bp, url_prefix='/api')
-app.register_blueprint(customers_bp, url_prefix='/api')
-app.register_blueprint(orders_bp, url_prefix='/api')
 
 # Inject whatsapp client into chat blueprint
 import routes.whatsapp_chat
 routes.whatsapp_chat.whatsapp = whatsapp
 
-# Setup webhook with authentication (runs on import)
+# Setup webhook with authentication
 setup_chat_webhook(app, whatsapp)
 
-# Optionally send a startup message (be careful with side effects in production)
+# Optionally send a startup message
 whatsapp.send_text_message(
     to='34696864400',
     message='Starting the server'
 )
-
-#whatsapp.set_webhook_url("https://staging-whatsapp-chat-llm/webhook")
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)

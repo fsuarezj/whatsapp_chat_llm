@@ -1,102 +1,113 @@
-from flask import Blueprint, request, jsonify, abort
+from flask_restx import Namespace, Resource, fields
+from flask import request
 from models import db
-from models.customer_model import Customer  # Use your real Customer model
+from models.customer_model import Customer
 from decorators import jwt_required
 from loguru import logger
 from werkzeug.exceptions import BadRequest, Conflict, NotFound
 import re
 
-customers_bp = Blueprint('customers', __name__)
+# Create namespace
+api = Namespace('customers', description='Customer operations')
 
-@customers_bp.route('/customers', methods=['GET'])
-@jwt_required
-def get_all_customers(user_id):
-    customers = Customer.query.all()
-    logger.debug(customers)
-    return jsonify([{"id": c.id, "name": c.name, "phone_number": c.phone_number, "address": c.address, "notes": c.notes} for c in customers]), 200
+# Define models for Swagger documentation
+customer_model = api.model('Customer', {
+    'id': fields.Integer(readonly=True, description='Customer ID'),
+    'name': fields.String(description='Customer name', max_length=80),
+    'phone_number': fields.String(required=True, description='Customer phone number (6-10 digits, country code optional)', max_length=20),
+    'address': fields.String(description='Customer address', max_length=255),
+    'notes': fields.String(description='Additional notes about the customer')
+})
 
-@customers_bp.route('/customers/<int:customer_id>', methods=['GET'])
-@jwt_required
-def get_single_customer(customer_id, user_id):
-    customer = db.session.get(Customer, customer_id)
-    if not customer:
-       raise NotFound("Customer not found")
-    return jsonify({
-        "id": customer.id,
-        "name": customer.name,
-        "phone_number": customer.phone_number,
-        "address": customer.address,
-        "notes": customer.notes
-    }), 200
+@api.route('/customers')
+class CustomerList(Resource):
+    @api.doc('list_customers', security='bearerAuth')
+    @api.marshal_list_with(customer_model)
+    @api.response(200, 'Success')
+    @api.response(401, 'Unauthorized')
+    @api.response(400, 'Invalid query parameters')
+    @jwt_required
+    def get(self, user_id):
+        """List all customers"""
+        customers = Customer.query.all()
+        return customers
 
-@customers_bp.route('/customers', methods=['POST'])
-@jwt_required
-def create_customer(user_id):
-    data = request.get_json()
-    if not data:
-        raise BadRequest("No data provided")
-    validate_customer_data(data)
+    @api.doc('create_customer', security='bearerAuth')
+    @api.expect(customer_model)
+    @api.marshal_with(customer_model, code=201)
+    @api.response(201, 'Customer created successfully')
+    @api.response(400, 'Invalid input data')
+    @api.response(401, 'Unauthorized')
+    @api.response(409, 'Customer with this phone number already exists')
+    @jwt_required
+    def post(self, user_id):
+        """Create a new customer"""
+        data = api.payload
+        validate_customer_data(data)
 
-    # Check if customer with phone number already exists
-    existing_customer = Customer.query.filter_by(phone_number=data['phone_number']).first()
-    #existing_customer = db.session.get(Customer, data['phone_number'])
-    if existing_customer:
-        raise Conflict(f"Customer with phone number {data['phone_number']} already exists")
+        existing_customer = Customer.query.filter_by(phone_number=data['phone_number']).first()
+        if existing_customer:
+            raise Conflict(f"Customer with phone number {data['phone_number']} already exists")
+            
+        customer = Customer(**data)
+        db.session.add(customer)
+        db.session.commit()
+        return customer, 201
+
+@api.route('/customers/<int:customer_id>')
+@api.param('customer_id', 'The customer identifier')
+class CustomerResource(Resource):
+    @api.doc('get_customer', security='bearerAuth')
+    @api.marshal_with(customer_model)
+    @api.response(200, 'Success')
+    @api.response(401, 'Unauthorized')
+    @api.response(404, 'Customer not found')
+    @jwt_required
+    def get(self, customer_id, user_id):
+        """Get a customer by ID"""
+        customer = db.session.get(Customer, customer_id)
+        if not customer:
+            api.abort(404, "Customer not found")
+        return customer
+
+    @api.doc('update_customer', security='bearerAuth')
+    @api.expect(customer_model)
+    @api.marshal_with(customer_model)
+    @api.response(200, 'Customer updated successfully')
+    @api.response(400, 'Invalid input data')
+    @api.response(401, 'Unauthorized')
+    @api.response(404, 'Customer not found')
+    @api.response(409, 'Customer with this phone number already exists')
+    @jwt_required
+    def put(self, customer_id, user_id):
+        """Update a customer"""
+        customer = db.session.get(Customer, customer_id)
+        if not customer:
+            api.abort(404, "Customer not found")
         
-    customer = Customer(
-        name=data.get('name'),
-        phone_number=data['phone_number'],
-        address=data.get('address'),
-        notes=data.get('notes')
-    )
-    db.session.add(customer)
-    db.session.commit()
-    return jsonify({
-        "id": customer.id,
-        "name": customer.name,
-        "phone_number": customer.phone_number,
-        "address": customer.address,
-        "notes": customer.notes
-    }), 201
+        data = api.payload
+        validate_customer_data(data, update=True)
+        
+        for key, value in data.items():
+            setattr(customer, key, value)
+        
+        db.session.commit()
+        return customer
 
-@customers_bp.route('/customers/<int:customer_id>', methods=['PUT'])
-@jwt_required
-def update_customer(customer_id, user_id):
-    customer = db.session.get(Customer, customer_id)
-    if not customer:
-        raise NotFound("Customer not found")
-    data = request.get_json()
-    if not data:
-        raise BadRequest("No data provided")
-    validate_customer_data(data)
-    
-    if 'name' in data:
-        customer.name = data['name']
-    if 'phone_number' in data:
-        customer.phone_number = data['phone_number']
-    if 'address' in data:
-        customer.address = data['address']
-    if 'notes' in data:
-        customer.notes = data['notes']
-    
-    db.session.commit()
-    return jsonify({
-        "id": customer.id,
-        "name": customer.name,
-        "phone_number": customer.phone_number,
-        "address": customer.address,
-        "notes": customer.notes
-    }), 200
-
-@customers_bp.route('/customers/<int:customer_id>', methods=['DELETE'])
-@jwt_required
-def delete_customer(customer_id, user_id):
-    customer = db.session.get(Customer, customer_id)
-    if not customer:
-        raise NotFound("Customer not found")
-    db.session.delete(customer)
-    db.session.commit()
-    return "", 204
+    @api.doc('delete_customer', security='bearerAuth')
+    @api.response(204, 'Customer deleted successfully')
+    @api.response(400, 'Cannot delete customer with associated orders')
+    @api.response(401, 'Unauthorized')
+    @api.response(404, 'Customer not found')
+    @jwt_required
+    def delete(self, customer_id, user_id):
+        """Delete a customer"""
+        customer = db.session.get(Customer, customer_id)
+        if not customer:
+            api.abort(404, "Customer not found")
+        db.session.delete(customer)
+        db.session.commit()
+        return '', 204
 
 def validate_customer_name(name):
     if not isinstance(name, str) or not name.strip():

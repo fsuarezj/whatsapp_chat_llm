@@ -3,6 +3,7 @@ from flask import session
 from routes.auth import auth_bp, login_attempts
 from models import db, User
 from werkzeug.security import generate_password_hash
+from loguru import logger
 
 def create_user(username, password):
     user = User(username=username, password=generate_password_hash(password))
@@ -15,13 +16,13 @@ def test_login_missing_data(client):
     assert resp.status_code == 415
     # No data empty
     resp = client.post('api/login', json={})
-    assert resp.status_code == 401
+    assert resp.status_code == 400
     # Missing username
     resp = client.post('api/login', json={'password': 'pass'})
-    assert resp.status_code == 401
+    assert resp.status_code == 400
     # Missing password
     resp = client.post('api/login', json={'username': 'user'})
-    assert resp.status_code == 401
+    assert resp.status_code == 400
 
 def test_login_invalid_credentials(client):
     create_user('user1', 'Password123')
@@ -52,7 +53,7 @@ def test_login_rate_limit(client, monkeypatch):
     # 6th attempt should be rate limited
     resp = client.post('api/login', json={'username': 'user1', 'password': 'WrongPass'})
     assert resp.status_code == 429
-    assert 'Too many login attempts' in resp.get_json()['error']
+    assert 'Too many login attempts' in resp.get_json()['message']
     # Simulate time passing (over 10 minutes)
     login_attempts[key]['time'] -= 601
     resp = client.post('api/login', json={'username': 'user1', 'password': 'WrongPass'})

@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify
+from flask_restx import Namespace, Resource, fields
+from flask import request
 from models import db
 from models.order_model import Order, OrderProduct, OrderType, OrderPaymentStatus, OrderDeliveryStatus
 from models.customer_model import Customer
@@ -8,20 +9,73 @@ from werkzeug.exceptions import BadRequest, NotFound
 import datetime
 from sqlalchemy import and_, select
 
-orders_bp = Blueprint('orders', __name__)
+# Create namespace
+api = Namespace('orders', description='Order operations')
 
-@orders_bp.route('/orders', methods=['GET', 'POST'])
-@jwt_required
-def orders(user_id):
-    if request.method == 'POST':
-        data = request.json
+# Define models for Swagger documentation
+order_item_model = api.model('OrderItem', {
+    'product_id': fields.Integer(required=True, description='ID of the product'),
+    'quantity': fields.Integer(required=True, description='Quantity of the product', min=1)
+})
+
+order_model = api.model('Order', {
+    'id': fields.Integer(readonly=True, description='Order ID'),
+    'customer_id': fields.Integer(required=True, description='ID of the customer'),
+    'order_type': fields.String(required=True, description='Type of order (pickup or delivery)', enum=['pickup', 'delivery']),
+    'payment_status': fields.String(description='Payment status', enum=['not_paid', 'paid']),
+    'delivery_status': fields.String(description='Delivery status', enum=['not_delivered', 'delivered']),
+    'datetime': fields.DateTime(description='Order datetime'),
+    'items': fields.List(fields.Nested(order_item_model), required=True, description='List of items in the order'),
+    'total_amount': fields.Float(description='Total order amount')
+})
+
+@api.route('/orders')
+class OrderList(Resource):
+    @api.doc('list_orders', security='bearerAuth')
+    @api.marshal_list_with(order_model)
+    @api.response(200, 'Success')
+    @api.response(401, 'Unauthorized')
+    @api.response(400, 'Invalid query parameters')
+    @jwt_required
+    def get(self, user_id):
+        """List all orders with optional filters"""
+        query = select(Order)
+        
+        date_str = request.args.get('date')
+        if date_str:
+            try:
+                filter_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                query = query.filter(db.func.date(Order.datetime) == filter_date)
+            except ValueError:
+                api.abort(400, 'Invalid date format. Use YYYY-MM-DD')
+        
+        customer_id = request.args.get('customer_id')
+        if customer_id:
+            try:
+                customer_id = int(customer_id)
+                query = query.filter(Order.customer_id == customer_id)
+            except ValueError:
+                api.abort(400, 'Invalid customer ID')
+        
+        orders = db.session.execute(query).scalars().all()
+        return [format_order(order) for order in orders]
+
+    @api.doc('create_order', security='bearerAuth')
+    @api.expect(order_model)
+    @api.marshal_with(order_model, code=201)
+    @api.response(201, 'Order created successfully')
+    @api.response(400, 'Invalid input data')
+    @api.response(401, 'Unauthorized')
+    @api.response(409, 'Duplicate order detected')
+    @jwt_required
+    def post(self, user_id):
+        """Create a new order"""
+        data = api.payload
         validate_order_data(data)
         
-        # Check for duplicate order
         if is_duplicate_order(data):
-            raise BadRequest('Duplicate order detected')
+            api.abort(400, 'Duplicate order detected')
             
-        # Create order
         order = Order(
             customer_id=data['customer_id'],
             order_type=OrderType(data['order_type']),
@@ -30,9 +84,8 @@ def orders(user_id):
             delivery_status=OrderDeliveryStatus.not_delivered
         )
         db.session.add(order)
-        db.session.flush()  # Get order ID without committing
+        db.session.flush()
         
-        # Add order items
         for item in data['items']:
             validate_order_item(item)
             order_product = OrderProduct(
@@ -43,90 +96,81 @@ def orders(user_id):
             db.session.add(order_product)
         
         db.session.commit()
-        return jsonify({
-            'id': order.id,
-            'customer_id': order.customer_id,
-            'order_type': order.order_type.value,
-            'payment_status': order.payment_status.value,
-            'delivery_status': order.delivery_status.value,
-            'datetime': order.datetime.isoformat(),
-            'total_amount': order.total_amount
-        }), 201
-    else:
-        # Handle GET request with filters
-        query = select(Order)
+        return format_order(order), 201
+
+@api.route('/orders/<int:order_id>')
+@api.param('order_id', 'The order identifier')
+class OrderResource(Resource):
+    @api.doc('get_order', security='bearerAuth')
+    @api.marshal_with(order_model)
+    @api.response(200, 'Success')
+    @api.response(401, 'Unauthorized')
+    @api.response(404, 'Order not found')
+    @jwt_required
+    def get(self, order_id, user_id):
+        """Get an order by ID"""
+        order = db.session.get(Order, order_id)
+        if not order:
+            api.abort(404, 'Order not found')
+        return format_order(order)
+
+    @api.doc('delete_order', security='bearerAuth')
+    @api.response(204, 'Order deleted successfully')
+    @api.response(400, 'Cannot delete paid or delivered orders')
+    @api.response(401, 'Unauthorized')
+    @api.response(404, 'Order not found')
+    @jwt_required
+    def delete(self, order_id, user_id):
+        """Delete an order"""
+        order = db.session.get(Order, order_id)
+        if not order:
+            api.abort(404, 'Order not found')
         
-        # Filter by date if provided
-        date_str = request.args.get('date')
-        if date_str:
+        if order.payment_status == OrderPaymentStatus.paid or order.delivery_status == OrderDeliveryStatus.delivered:
+            api.abort(400, 'Cannot delete paid or delivered orders')
+        
+        db.session.query(OrderProduct).filter_by(order_id=order.id).delete()
+        db.session.delete(order)
+        db.session.commit()
+        return '', 204
+
+@api.route('/orders/<int:order_id>/status')
+@api.param('order_id', 'The order identifier')
+class OrderStatus(Resource):
+    @api.doc('update_order_status', security='bearerAuth')
+    @api.expect(api.model('OrderStatus', {
+        'payment_status': fields.String(enum=['not_paid', 'paid']),
+        'delivery_status': fields.String(enum=['not_delivered', 'delivered'])
+    }))
+    @api.response(200, 'Order status updated successfully')
+    @api.response(400, 'Invalid input data')
+    @api.response(401, 'Unauthorized')
+    @api.response(404, 'Order not found')
+    @jwt_required
+    def put(self, order_id, user_id):
+        """Update order status"""
+        order = db.session.get(Order, order_id)
+        if not order:
+            api.abort(404, 'Order not found')
+        
+        data = api.payload
+        if not isinstance(data, dict):
+            api.abort(400, 'Invalid data format')
+        
+        if 'payment_status' in data:
             try:
-                filter_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
-                query = query.filter(db.func.date(Order.datetime) == filter_date)
+                order.payment_status = OrderPaymentStatus(data['payment_status'])
             except ValueError:
-                raise BadRequest('Invalid date format. Use YYYY-MM-DD')
+                api.abort(400, 'Invalid payment status')
         
-        # Filter by customer if provided
-        customer_id = request.args.get('customer_id')
-        if customer_id:
+        if 'delivery_status' in data:
             try:
-                customer_id = int(customer_id)
-                query = query.filter(Order.customer_id == customer_id)
+                order.delivery_status = OrderDeliveryStatus(data['delivery_status'])
             except ValueError:
-                raise BadRequest('Invalid customer ID')
+                api.abort(400, 'Invalid delivery status')
         
-        orders = db.session.execute(query).scalars().all()
-        return jsonify([format_order(order) for order in orders]), 200
-
-@orders_bp.route('/orders/<int:order_id>', methods=['GET'])
-@jwt_required
-def get_order(order_id, user_id):
-    order = db.session.get(Order, order_id)
-    if not order:
-        raise NotFound('Order not found')
-    return jsonify(format_order(order)), 200
-
-@orders_bp.route('/orders/<int:order_id>/status', methods=['PUT'])
-@jwt_required
-def update_order_status(order_id, user_id):
-    order = db.session.get(Order, order_id)
-    if not order:
-        raise NotFound('Order not found')
-    
-    data = request.json
-    
-    if not isinstance(data, dict):
-        raise BadRequest('Invalid data format')
-    
-    if 'payment_status' in data:
-        try:
-            order.payment_status = OrderPaymentStatus(data['payment_status'])
-        except ValueError:
-            raise BadRequest('Invalid payment status')
-    
-    if 'delivery_status' in data:
-        try:
-            order.delivery_status = OrderDeliveryStatus(data['delivery_status'])
-        except ValueError:
-            raise BadRequest('Invalid delivery status')
-    
-    db.session.commit()
-    return jsonify({'message': 'Order status updated successfully'}), 200
-
-@orders_bp.route('/orders/<int:order_id>', methods=['DELETE'])
-@jwt_required
-def delete_order(order_id, user_id):
-    order = db.session.get(Order, order_id)
-    if not order:
-        raise NotFound('Order not found')
-    
-    if order.payment_status == OrderPaymentStatus.paid or order.delivery_status == OrderDeliveryStatus.delivered:
-        raise BadRequest('Cannot delete paid or delivered orders')
-    
-    # Delete all entries in order_product for this order
-    db.session.query(OrderProduct).filter_by(order_id=order.id).delete()
-    db.session.delete(order)
-    db.session.commit()
-    return jsonify({'message': 'Order deleted successfully'}), 200
+        db.session.commit()
+        return {'message': 'Order status updated successfully'}, 200
 
 def validate_order_data(data):
     if not isinstance(data, dict):

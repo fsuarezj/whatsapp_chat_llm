@@ -240,8 +240,7 @@ def test_update_order_status_invalid(client, auth_headers, sample_order):
 
 def test_delete_order_success(client, auth_headers, sample_order):
     response = client.delete(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
-    assert response.status_code == 200
-    assert response.json['message'] == 'Order deleted successfully'
+    assert response.status_code == 204
 
     # Verify the order was deleted
     response = client.get(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
@@ -256,9 +255,7 @@ def test_delete_paid_order(client, auth_headers, sample_order):
     # Try to delete the paid order
     response = client.delete(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
     assert response.status_code == 400
-    soup = BeautifulSoup(response.text, 'html.parser')
-    text = soup.find('p').text
-    assert text == "Cannot delete paid or delivered orders"
+    assert "Cannot delete paid or delivered orders" in response.get_json()['message']
 
 
 def test_delete_delivered_order(client, auth_headers, sample_order):
@@ -270,9 +267,7 @@ def test_delete_delivered_order(client, auth_headers, sample_order):
     # Try to delete the delivered order
     response = client.delete(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
     assert response.status_code == 400
-    soup = BeautifulSoup(response.text, 'html.parser')
-    text = soup.find('p').text
-    assert text == "Cannot delete paid or delivered orders"
+    assert "Cannot delete paid or delivered orders" in response.get_json()['message']
 
 def test_duplicate_order_validation(client, auth_headers, sample_order, sample_customer, sample_product):
     # Try to create an identical order
@@ -285,6 +280,4 @@ def test_duplicate_order_validation(client, auth_headers, sample_order, sample_c
     }
     response = client.post('/api/orders', json=data, headers=auth_headers)
     assert response.status_code == 400
-    soup = BeautifulSoup(response.text, 'html.parser')
-    text = soup.find('p').text
-    assert text == "Duplicate order detected"
+    assert "Duplicate order detected" in response.get_json()['message']

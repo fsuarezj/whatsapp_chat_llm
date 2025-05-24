@@ -35,7 +35,7 @@ def test_register_weak_password(client):
 def test_register_existing_user(client):
     client.post('/api/register', json={'username': 'dup', 'password': 'StrongPass1'})
     resp = client.post('/api/register', json={'username': 'dup', 'password': 'StrongPass1'})
-    assert resp.status_code == 400
+    assert resp.status_code == 409
 
 def test_register_sql_injection(client):
     resp = client.post('/api/register', json={'username': "admin';--", 'password': 'StrongPass1'})
@@ -59,11 +59,11 @@ def test_login_invalid_password(client):
 
 def test_login_missing_fields(client):
     resp = client.post('/api/login', json={'username': 'user'})
-    assert resp.status_code == 401
+    assert resp.status_code == 400
     resp = client.post('/api/login', json={'password': 'pass'})
-    assert resp.status_code == 401
+    assert resp.status_code == 400
     resp = client.post('/api/login', json={})
-    assert resp.status_code == 401
+    assert resp.status_code == 400
 
 def test_login_sql_injection(client):
     client.post('/api/register', json={'username': 'sqltest', 'password': 'StrongPass1'})
