@@ -9,11 +9,11 @@ class OrderType(enum.Enum):
 
 class OrderPaymentStatus(enum.Enum):
     paid = "paid"
-    not_paid = "not_paid"
+    notPaid = "notPaid"
 
 class OrderDeliveryStatus(enum.Enum):
     delivered = "delivered"
-    not_delivered = "not_delivered"
+    notDelivered = "notDelivered"
 
 class OrderProduct(db.Model):
     __tablename__ = 'order_product'
@@ -31,8 +31,8 @@ class Order(db.Model):
     
     products = db.relationship('Product', secondary='order_product', back_populates='orders', overlaps="order_products")
     order_type = db.Column(Enum(OrderType), nullable=False)
-    payment_status = db.Column(Enum(OrderPaymentStatus), nullable=False, default=OrderPaymentStatus.not_paid)
-    delivery_status = db.Column(Enum(OrderDeliveryStatus), nullable=False, default=OrderDeliveryStatus.not_delivered)
+    payment_status = db.Column(Enum(OrderPaymentStatus), nullable=False, default=OrderPaymentStatus.notPaid)
+    delivery_status = db.Column(Enum(OrderDeliveryStatus), nullable=False, default=OrderDeliveryStatus.notDelivered)
     datetime = db.Column(db.DateTime)
     address = db.Column(db.String(255))
     notes = db.Column(db.Text)

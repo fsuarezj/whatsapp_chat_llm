@@ -43,7 +43,9 @@ class CustomerList(Resource):
     def post(self, user_id):
         """Create a new customer"""
         data = api.payload
+        logger.info(f"Creating customer: {data}")
         validate_customer_data(data)
+        logger.info(f"Validated customer data: {data}")
 
         existing_customer = Customer.query.filter_by(phone_number=data['phone_number']).first()
         if existing_customer:
@@ -141,7 +143,7 @@ def validate_customer_data(data, update=False):
     if 'address' in data:
         validate_address(data['address'])
     # Check for invalid fields
-    allowed_fields = {'phone_number', 'name', 'address'}
+    allowed_fields = {'phone_number', 'name', 'address', 'notes'}
     invalid_fields = set(data.keys()) - allowed_fields
     if invalid_fields:
         raise BadRequest(f"Invalid fields provided: {', '.join(invalid_fields)}")

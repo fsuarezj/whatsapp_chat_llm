@@ -4,6 +4,8 @@ from models import db, User
 import re
 from datetime import timedelta, datetime, timezone
 from loguru import logger
+import os
+
 #from flask_wtf.csrf import validate_csrf, CSRFError
 from flask_jwt_extended import (
     JWTManager, create_access_token, create_refresh_token,
@@ -117,6 +119,7 @@ class Login(Resource):
             login_attempts.pop(key, None)
             access_token = create_access_token(identity=str(user.id), additional_claims={"username": user.username})
             refresh_token = create_refresh_token(identity=str(user.id))
+            logger.info(f"Login successful for user: {username} from IP: {ip}")
             return {
                 'access_token': access_token,
                 'refresh_token': refresh_token,

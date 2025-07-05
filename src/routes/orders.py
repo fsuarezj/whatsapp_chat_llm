@@ -22,8 +22,8 @@ order_model = api.model('Order', {
     'id': fields.Integer(readonly=True, description='Order ID'),
     'customer_id': fields.Integer(required=True, description='ID of the customer'),
     'order_type': fields.String(required=True, description='Type of order (pickup or delivery)', enum=['pickup', 'delivery']),
-    'payment_status': fields.String(description='Payment status', enum=['not_paid', 'paid']),
-    'delivery_status': fields.String(description='Delivery status', enum=['not_delivered', 'delivered']),
+    'payment_status': fields.String(description='Payment status', enum=['notPaid', 'paid']),
+    'delivery_status': fields.String(description='Delivery status', enum=['notDelivered', 'delivered']),
     'datetime': fields.DateTime(description='Order datetime'),
     'items': fields.List(fields.Nested(order_item_model), required=True, description='List of items in the order'),
     'total_amount': fields.Float(description='Total order amount')
@@ -80,8 +80,8 @@ class OrderList(Resource):
             customer_id=data['customer_id'],
             order_type=OrderType(data['order_type']),
             datetime=datetime.datetime.fromisoformat(data.get('datetime', datetime.datetime.now(datetime.UTC).isoformat())),
-            payment_status=OrderPaymentStatus.not_paid,
-            delivery_status=OrderDeliveryStatus.not_delivered
+            payment_status=OrderPaymentStatus.notPaid,
+            delivery_status=OrderDeliveryStatus.notDelivered
         )
         db.session.add(order)
         db.session.flush()
@@ -134,21 +134,20 @@ class OrderResource(Resource):
         db.session.commit()
         return '', 204
 
-@api.route('/orders/<int:order_id>/status')
+@api.route('/orders/<int:order_id>/payment_status')
 @api.param('order_id', 'The order identifier')
-class OrderStatus(Resource):
-    @api.doc('update_order_status', security='bearerAuth')
-    @api.expect(api.model('OrderStatus', {
-        'payment_status': fields.String(enum=['not_paid', 'paid']),
-        'delivery_status': fields.String(enum=['not_delivered', 'delivered'])
+class OrderPaymentStatusResource(Resource):
+    @api.doc('update_order_payment_status', security='bearerAuth')
+    @api.expect(api.model('OrderPaymentStatus', {
+        'payment_status': fields.String(enum=['notPaid', 'paid'])
     }))
-    @api.response(200, 'Order status updated successfully')
+    @api.response(200, 'Order payment status updated successfully')
     @api.response(400, 'Invalid input data')
     @api.response(401, 'Unauthorized')
     @api.response(404, 'Order not found')
     @jwt_required
     def put(self, order_id, user_id):
-        """Update order status"""
+        """Update order payment status"""
         order = db.session.get(Order, order_id)
         if not order:
             api.abort(404, 'Order not found')
@@ -157,20 +156,82 @@ class OrderStatus(Resource):
         if not isinstance(data, dict):
             api.abort(400, 'Invalid data format')
         
-        if 'payment_status' in data:
-            try:
-                order.payment_status = OrderPaymentStatus(data['payment_status'])
-            except ValueError:
-                api.abort(400, 'Invalid payment status')
+        if 'payment_status' not in data:
+            api.abort(400, 'payment_status is required')
         
-        if 'delivery_status' in data:
-            try:
-                order.delivery_status = OrderDeliveryStatus(data['delivery_status'])
-            except ValueError:
-                api.abort(400, 'Invalid delivery status')
+        try:
+            order.payment_status = OrderPaymentStatus(data['payment_status'])
+        except ValueError:
+            api.abort(400, 'Invalid payment status')
         
         db.session.commit()
-        return {'message': 'Order status updated successfully'}, 200
+        return {'message': 'Order payment status updated successfully'}, 200
+
+@api.route('/orders/<int:order_id>/delivery_status')
+@api.param('order_id', 'The order identifier')
+class OrderDeliveryStatusResource(Resource):
+    @api.doc('update_order_delivery_status', security='bearerAuth')
+    @api.expect(api.model('OrderDeliveryStatus', {
+        'delivery_status': fields.String(enum=['notDelivered', 'delivered'])
+    }))
+    @api.response(200, 'Order delivery status updated successfully')
+    @api.response(400, 'Invalid input data')
+    @api.response(401, 'Unauthorized')
+    @api.response(404, 'Order not found')
+    @jwt_required
+    def put(self, order_id, user_id):
+        """Update order delivery status"""
+        order = db.session.get(Order, order_id)
+        if not order:
+            api.abort(404, 'Order not found')
+        
+        data = api.payload
+        if not isinstance(data, dict):
+            api.abort(400, 'Invalid data format')
+        
+        if 'delivery_status' not in data:
+            api.abort(400, 'delivery_status is required')
+        
+        try:
+            order.delivery_status = OrderDeliveryStatus(data['delivery_status'])
+        except ValueError:
+            api.abort(400, 'Invalid delivery status')
+        
+        db.session.commit()
+        return {'message': 'Order delivery status updated successfully'}, 200
+
+@api.route('/orders/<int:order_id>/order_type')
+@api.param('order_id', 'The order identifier')
+class OrderTypeResource(Resource):
+    @api.doc('update_order_type', security='bearerAuth')
+    @api.expect(api.model('OrderType', {
+        'order_type': fields.String(enum=['pickup', 'delivery'])
+    }))
+    @api.response(200, 'Order type updated successfully')
+    @api.response(400, 'Invalid input data')
+    @api.response(401, 'Unauthorized')
+    @api.response(404, 'Order not found')
+    @jwt_required
+    def put(self, order_id, user_id):
+        """Update order type"""
+        order = db.session.get(Order, order_id)
+        if not order:
+            api.abort(404, 'Order not found')
+        
+        data = api.payload
+        if not isinstance(data, dict):
+            api.abort(400, 'Invalid data format')
+        
+        if 'order_type' not in data:
+            api.abort(400, 'order_type is required')
+        
+        try:
+            order.order_type = OrderType(data['order_type'])
+        except ValueError:
+            api.abort(400, 'Invalid order type')
+        
+        db.session.commit()
+        return {'message': 'Order type updated successfully'}, 200
 
 def validate_order_data(data):
     if not isinstance(data, dict):

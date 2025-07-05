@@ -222,21 +222,203 @@ def test_get_orders_by_customer_and_date(client, auth_headers, multiple_orders, 
         for order in filtered_orders
     )
 
-def test_update_order_status_success(client, auth_headers, sample_order):
+def test_update_order_payment_status_success(client, auth_headers, sample_order):
     data = {'payment_status': 'paid'}
-    response = client.put(f'/api/orders/{sample_order["id"]}/status', json=data, headers=auth_headers)
+    response = client.put(f'/api/orders/{sample_order["id"]}/payment_status', json=data, headers=auth_headers)
     assert response.status_code == 200
-    assert response.json['message'] == 'Order status updated successfully'
+    assert response.json['message'] == 'Order payment status updated successfully'
 
-    # Verify the status was updated
+    # Verify the payment status was updated
     response = client.get(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
     assert response.status_code == 200
     assert response.json['payment_status'] == 'paid'
 
-def test_update_order_status_invalid(client, auth_headers, sample_order):
+def test_update_order_payment_status_invalid(client, auth_headers, sample_order):
     data = {'payment_status': 'invalid_status'}
-    response = client.put(f'/api/orders/{sample_order["id"]}/status', json=data, headers=auth_headers)
+    response = client.put(f'/api/orders/{sample_order["id"]}/payment_status', json=data, headers=auth_headers)
     assert response.status_code == 400
+
+def test_update_order_payment_status_missing_field(client, auth_headers, sample_order):
+    data = {}
+    response = client.put(f'/api/orders/{sample_order["id"]}/payment_status', json=data, headers=auth_headers)
+    assert response.status_code == 400
+    assert "payment_status is required" in response.get_json()['message']
+
+def test_update_order_payment_status_not_found(client, auth_headers):
+    data = {'payment_status': 'paid'}
+    response = client.put('/api/orders/999/payment_status', json=data, headers=auth_headers)
+    assert response.status_code == 404
+
+def test_update_order_delivery_status_success(client, auth_headers, sample_order):
+    data = {'delivery_status': 'delivered'}
+    response = client.put(f'/api/orders/{sample_order["id"]}/delivery_status', json=data, headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json['message'] == 'Order delivery status updated successfully'
+
+    # Verify the delivery status was updated
+    response = client.get(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json['delivery_status'] == 'delivered'
+
+def test_update_order_delivery_status_invalid(client, auth_headers, sample_order):
+    data = {'delivery_status': 'invalid_status'}
+    response = client.put(f'/api/orders/{sample_order["id"]}/delivery_status', json=data, headers=auth_headers)
+    assert response.status_code == 400
+
+def test_update_order_delivery_status_missing_field(client, auth_headers, sample_order):
+    data = {}
+    response = client.put(f'/api/orders/{sample_order["id"]}/delivery_status', json=data, headers=auth_headers)
+    assert response.status_code == 400
+    assert "delivery_status is required" in response.get_json()['message']
+
+def test_update_order_delivery_status_not_found(client, auth_headers):
+    data = {'delivery_status': 'delivered'}
+    response = client.put('/api/orders/999/delivery_status', json=data, headers=auth_headers)
+    assert response.status_code == 404
+
+def test_update_order_type_success_pickup_to_delivery(client, auth_headers, sample_order):
+    """Test updating order type from pickup to delivery"""
+    data = {'order_type': 'delivery'}
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json['message'] == 'Order type updated successfully'
+
+    # Verify the order type was updated
+    response = client.get(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json['order_type'] == 'delivery'
+
+def test_update_order_type_success_delivery_to_pickup(client, auth_headers, sample_customer, sample_product):
+    """Test updating order type from delivery to pickup"""
+    # First create an order with delivery type
+    data = {
+        'customer_id': sample_customer['id'],
+        'order_type': 'delivery',
+        'items': [
+            {'product_id': sample_product['id'], 'quantity': 1}
+        ]
+    }
+    response = client.post('/api/orders', json=data, headers=auth_headers)
+    assert response.status_code == 201
+    order = response.json
+
+    # Update to pickup
+    update_data = {'order_type': 'pickup'}
+    response = client.put(f'/api/orders/{order["id"]}/order_type', json=update_data, headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json['message'] == 'Order type updated successfully'
+
+    # Verify the order type was updated
+    response = client.get(f'/api/orders/{order["id"]}', headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json['order_type'] == 'pickup'
+
+def test_update_order_type_invalid_value(client, auth_headers, sample_order):
+    """Test updating order type with invalid value"""
+    data = {'order_type': 'invalid_type'}
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 400
+
+def test_update_order_type_missing_field(client, auth_headers, sample_order):
+    """Test updating order type without providing the field"""
+    data = {}
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 400
+    assert "order_type is required" in response.get_json()['message']
+
+def test_update_order_type_not_found(client, auth_headers):
+    """Test updating order type for non-existent order"""
+    data = {'order_type': 'delivery'}
+    response = client.put('/api/orders/999/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 404
+
+def test_update_order_type_invalid_data_format(client, auth_headers, sample_order):
+    """Test updating order type with invalid data format"""
+    # Test with string instead of dict
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json="invalid", headers=auth_headers)
+    assert response.status_code == 400
+
+    # Test with list instead of dict
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=["delivery"], headers=auth_headers)
+    assert response.status_code == 400
+
+def test_update_order_type_case_sensitivity(client, auth_headers, sample_order):
+    """Test that order type is case sensitive"""
+    data = {'order_type': 'PICKUP'}  # Uppercase
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 400
+
+    data = {'order_type': 'Delivery'}  # Title case
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 400
+
+def test_update_order_type_empty_string(client, auth_headers, sample_order):
+    """Test updating order type with empty string"""
+    data = {'order_type': ''}
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 400
+
+def test_update_order_type_null_value(client, auth_headers, sample_order):
+    """Test updating order type with null value"""
+    data = {'order_type': None}
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 400
+
+def test_update_order_type_extra_fields(client, auth_headers, sample_order):
+    """Test updating order type with extra fields (should still work)"""
+    data = {
+        'order_type': 'delivery',
+        'extra_field': 'should_be_ignored',
+        'another_field': 123
+    }
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json['message'] == 'Order type updated successfully'
+
+    # Verify only the order_type was updated
+    response = client.get(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json['order_type'] == 'delivery'
+
+def test_update_order_type_same_value(client, auth_headers, sample_order):
+    """Test updating order type to the same value (should work)"""
+    # First verify the current order type
+    response = client.get(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
+    assert response.status_code == 200
+    original_order_type = response.json['order_type']
+
+    # Update to the same value
+    data = {'order_type': original_order_type}
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json['message'] == 'Order type updated successfully'
+
+    # Verify the order type remains the same
+    response = client.get(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json['order_type'] == original_order_type
+
+def test_update_order_type_unauthorized(client, sample_order):
+    """Test updating order type without authentication"""
+    data = {'order_type': 'delivery'}
+    response = client.put(f'/api/orders/{sample_order["id"]}/order_type', json=data)
+    assert response.status_code == 401
+
+def test_update_order_type_wrong_method(client, auth_headers, sample_order):
+    """Test updating order type with wrong HTTP method"""
+    data = {'order_type': 'delivery'}
+    
+    # Test with GET method
+    response = client.get(f'/api/orders/{sample_order["id"]}/order_type', headers=auth_headers)
+    assert response.status_code == 405  # Method Not Allowed
+    
+    # Test with POST method
+    response = client.post(f'/api/orders/{sample_order["id"]}/order_type', json=data, headers=auth_headers)
+    assert response.status_code == 405  # Method Not Allowed
+    
+    # Test with DELETE method
+    response = client.delete(f'/api/orders/{sample_order["id"]}/order_type', headers=auth_headers)
+    assert response.status_code == 405  # Method Not Allowed
 
 def test_delete_order_success(client, auth_headers, sample_order):
     response = client.delete(f'/api/orders/{sample_order["id"]}', headers=auth_headers)
@@ -249,7 +431,7 @@ def test_delete_order_success(client, auth_headers, sample_order):
 def test_delete_paid_order(client, auth_headers, sample_order):
     # First update the order to paid status
     data = {'payment_status': 'paid'}
-    response = client.put(f'/api/orders/{sample_order["id"]}/status', json=data, headers=auth_headers)
+    response = client.put(f'/api/orders/{sample_order["id"]}/payment_status', json=data, headers=auth_headers)
     assert response.status_code == 200
 
     # Try to delete the paid order
@@ -257,11 +439,10 @@ def test_delete_paid_order(client, auth_headers, sample_order):
     assert response.status_code == 400
     assert "Cannot delete paid or delivered orders" in response.get_json()['message']
 
-
 def test_delete_delivered_order(client, auth_headers, sample_order):
     # First update the order to delivered status
     data = {'delivery_status': 'delivered'}
-    response = client.put(f'/api/orders/{sample_order["id"]}/status', json=data, headers=auth_headers)
+    response = client.put(f'/api/orders/{sample_order["id"]}/delivery_status', json=data, headers=auth_headers)
     assert response.status_code == 200
 
     # Try to delete the delivered order
