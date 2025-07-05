@@ -49,13 +49,14 @@ def validate_description(description):
 
 def validate_picture_url(url):
     """Validate product picture URL"""
-    if url is not None:
+    logger.debug(f"Validating picture URL: {url}")
+    if url is not None and url != "":
         if not isinstance(url, str):
             raise BadRequest("Picture URL must be a string")
         if len(url) > 255:
             raise BadRequest("Picture URL must be less than 255 characters")
-        # Basic URL validation
-        if not re.match(r'^https?://[^\s/$.?#].[^\s]*$', url):
+        # More comprehensive URL validation
+        if not re.match(r'^https?://[^\s]+$', url) or '//' not in url[8:]:
             raise BadRequest("Invalid URL format")
 
 def validate_product_data(data, update=False):
