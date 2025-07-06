@@ -39,7 +39,7 @@ def validate_environment():
         'DB_USER': os.getenv('DB_USER', 'whatsapp_user'),
         'DB_PASSWORD': os.getenv('DB_PASSWORD', ''),
     }
-    print(required_vars)
+    
     missing_vars = [var for var, value in required_vars.items() if not value]
     
     if missing_vars:
