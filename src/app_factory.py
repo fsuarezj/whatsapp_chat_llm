@@ -38,8 +38,6 @@ from flask import request
 from flask_cors import CORS
 import dotenv
 
-dotenv.load_dotenv()
-
 from mtn_momo import MTNMoMo
 from chat_clients.my_whatsapp_client import MyWhatsAppClient
 
@@ -75,7 +73,10 @@ def get_database_uri():
     """
     environment = os.getenv('FLASK_ENV', 'development').lower()
     
-    if environment == 'production':
+    if environment == 'development':
+        # Development: Use SQLite
+        return 'sqlite:///../../instance/app.db'
+    elif environment == 'production':
         # Production: Use MariaDB
         db_host = os.getenv('DB_HOST', 'localhost')
         db_port = os.getenv('DB_PORT', '3306')
@@ -89,7 +90,7 @@ def get_database_uri():
         # Construct MariaDB URI with PyMySQL driver
         return f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?charset=utf8mb4"
     else:
-        raise ValueError(f"FLASK_ENV must be 'development' or 'production', not '{flask_env}'")
+        raise ValueError(f"FLASK_ENV must be 'development' or 'production', not '{environment}'")
 
 
 def create_app():
