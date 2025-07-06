@@ -37,9 +37,7 @@ from models import db
 from flask import request
 from flask_cors import CORS
 import dotenv
-
-from mtn_momo import MTNMoMo
-from chat_clients.my_whatsapp_client import MyWhatsAppClient
+from sqlalchemy import inspect
 
 import os
 from loguru import logger
@@ -91,6 +89,26 @@ def get_database_uri():
         return f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?charset=utf8mb4"
     else:
         raise ValueError(f"FLASK_ENV must be 'development' or 'production', not '{environment}'")
+
+
+def check_schema_exists(db):
+    """
+    Check if the database schema already exists by inspecting existing tables.
+    
+    Args:
+        db: SQLAlchemy database instance
+        
+    Returns:
+        bool: True if schema exists (tables are present), False otherwise
+    """
+    inspector = inspect(db.engine)
+    existing_tables = inspector.get_table_names()
+    
+    # Check if any of our expected tables exist
+    expected_tables = ['user', 'product', 'customer', 'order', 'order_product']
+    existing_expected_tables = [table for table in existing_tables if table in expected_tables]
+    
+    return len(existing_expected_tables) > 0
 
 
 def create_app():
@@ -149,7 +167,12 @@ def create_app():
     # Create database tables if they don't exist
     # This ensures the database schema is set up on first run
     with app.app_context():
-        db.create_all()
+        if not check_schema_exists(db):
+            logger.info("Database schema not found. Creating tables...")
+            db.create_all()
+            logger.info("Database tables created successfully.")
+        else:
+            logger.info("Database schema already exists. Skipping table creation.")
 
     # Initialize Flask-RESTX API with Swagger documentation
     api = Api(
