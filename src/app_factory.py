@@ -38,6 +38,8 @@ from flask import request
 from flask_cors import CORS
 import dotenv
 
+dotenv.load_dotenv()
+
 from mtn_momo import MTNMoMo
 from chat_clients.my_whatsapp_client import MyWhatsAppClient
 
