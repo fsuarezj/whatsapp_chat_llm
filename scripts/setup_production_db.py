@@ -18,7 +18,7 @@ Environment Variables Required:
 
 Author: [Your Name]
 Date: [Date]
-Version: 1.1
+Version: 1.2
 """
 
 import os
@@ -76,6 +76,32 @@ def test_mysql_connection(host, port, user, password, database=None):
         logger.error(f"Connection test failed: {e}")
         return False
 
+def check_database_exists(host, port, user, password, database):
+    """Check if database exists and user has access to it"""
+    try:
+        conn = pymysql.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=database,
+            charset='utf8mb4'
+        )
+        
+        with conn.cursor() as cursor:
+            # Test if we can access the database
+            cursor.execute("SELECT DATABASE()")
+            current_db = cursor.fetchone()
+            if current_db and current_db[0] == database:
+                logger.info(f"✓ Database '{database}' exists and is accessible")
+                return True
+        
+        conn.close()
+        return True
+    except Exception as e:
+        logger.info(f"Database '{database}' is not accessible: {e}")
+        return False
+
 def setup_production_database():
     """Set up MariaDB database and user for production"""
     
@@ -94,7 +120,26 @@ def setup_production_database():
     logger.info(f"Setting up database '{db_name}' on {db_host}:{db_port}")
     
     try:
-        # Test root connection if root password is provided
+        # First, try to connect with the application user to the specific database
+        logger.info("Testing application user connection to database...")
+        if check_database_exists(db_host, db_port, db_user, db_password, db_name):
+            logger.info("✓ Database already exists and is accessible with application user")
+            logger.info("✓ Production database setup completed successfully")
+            logger.info("Next steps:")
+            logger.info("1. Run database migration: python scripts/migrate_database.py")
+            logger.info("2. Fix password column if needed: python scripts/fix_password_column.py")
+            logger.info("3. Start the application: python src/app.py")
+            return
+        
+        # If we can't connect to the database, try connecting without specifying database
+        logger.info("Testing application user connection without database...")
+        if test_mysql_connection(db_host, db_port, db_user, db_password):
+            logger.info("✓ Application user exists but database access failed")
+            logger.info("Database may not exist or user lacks permissions")
+        else:
+            logger.info("✗ Application user connection failed")
+        
+        # Only use root password if provided and needed
         if db_root_password:
             logger.info("Testing root connection...")
             if not test_mysql_connection(db_host, db_port, 'root', db_root_password):
@@ -126,14 +171,15 @@ def setup_production_database():
             
             root_conn.close()
         else:
-            logger.warning("DB_ROOT_PASSWORD not provided, skipping database/user creation")
-            logger.info("Please create the database and user manually:")
+            logger.warning("DB_ROOT_PASSWORD not provided and database setup is needed")
+            logger.info("Please provide DB_ROOT_PASSWORD or create the database and user manually:")
             logger.info(f"CREATE DATABASE `{db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
             logger.info(f"CREATE USER '{db_user}'@'%' IDENTIFIED BY '{db_password}';")
             logger.info(f"GRANT ALL PRIVILEGES ON `{db_name}`.* TO '{db_user}'@'%';")
             logger.info("FLUSH PRIVILEGES;")
+            sys.exit(1)
         
-        # Test connection with the application user
+        # Final test connection with the application user
         logger.info("Testing application user connection...")
         if not test_mysql_connection(db_host, db_port, db_user, db_password, db_name):
             logger.error("Failed to connect with application user. Check user permissions.")
