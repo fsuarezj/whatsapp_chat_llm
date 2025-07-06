@@ -101,14 +101,37 @@ def check_schema_exists(db):
     Returns:
         bool: True if schema exists (tables are present), False otherwise
     """
-    inspector = inspect(db.engine)
-    existing_tables = inspector.get_table_names()
-    
-    # Check if any of our expected tables exist
-    expected_tables = ['user', 'product', 'customer', 'order', 'order_product']
-    existing_expected_tables = [table for table in existing_tables if table in expected_tables]
-    
-    return len(existing_expected_tables) > 0
+    try:
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+        
+        # Check if any of our expected tables exist
+        expected_tables = ['user', 'product', 'customer', 'order', 'order_product']
+        existing_expected_tables = [table for table in existing_tables if table in expected_tables]
+        
+        logger.info(f"Found existing tables: {existing_tables}")
+        logger.info(f"Expected tables found: {existing_expected_tables}")
+        
+        return len(existing_expected_tables) > 0
+        
+    except Exception as e:
+        logger.error(f"Error checking schema existence: {e}")
+        logger.error(f"Database URI: {db.engine.url}")
+        
+        # Log connection details for debugging (without password)
+        url = db.engine.url
+        logger.error(f"Connection details - Host: {url.host}, Port: {url.port}, Database: {url.database}, User: {url.username}")
+        
+        # Try to test basic connection
+        try:
+            with db.engine.connect() as conn:
+                result = conn.execute("SELECT 1")
+                logger.info("Basic database connection test successful")
+        except Exception as conn_error:
+            logger.error(f"Basic connection test failed: {conn_error}")
+        
+        # Return False to trigger table creation, but log the issue
+        return False
 
 
 def create_app():
