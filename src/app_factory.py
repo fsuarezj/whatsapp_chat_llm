@@ -23,8 +23,8 @@ Dependencies:
 - MTN MoMo: Mobile money integration
 - WhatsApp Green API: WhatsApp Business API integration
 
-Author: [Your Name]
-Date: [Date]
+Author: Fernando Suárez Jiménez (assisted by LLM)
+Date: 25/07/2025
 Version: 1.0
 """
 
@@ -41,6 +41,8 @@ from sqlalchemy import inspect
 
 import os
 from loguru import logger
+from chat_clients.my_whatsapp_client import MyWhatsAppClient
+from mtn_momo import MTNMoMo
 
 # Global rate limiter instance
 # Configured with fixed-window strategy and memory storage
