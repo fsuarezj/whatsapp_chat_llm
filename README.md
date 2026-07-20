@@ -1,4 +1,4 @@
-# XastrinShop WhatsApp Bot
+# Xastrinxop WhatsApp Bot
 
 Flask webhook server that receives WhatsApp messages via Green API and processes orders with LangGraph + OpenAI.
 
@@ -10,7 +10,7 @@ pip install -r requirements.txt
 cd src && python app.py
 ```
 
-Requires a running [xastrinshop-api](../xastrinshop-api/) instance.
+Requires a running [xastrinxop-api](../xastrinxop-api/) instance.
 
 ## Environment variables
 

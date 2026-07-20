@@ -110,7 +110,7 @@ def request_order_payment(order_id: int, phone_number: Optional[str] = None) -> 
         order_id=order_id,
         phone_number=payer_phone,
         amount=float(order.get("total_amount", 0)),
-        message=f"Payment for XastrinShop order #{order_id}",
+        message=f"Payment for Xastrinxop order #{order_id}",
     )
     return (
         f"Payment request sent for order #{order_id}. "
