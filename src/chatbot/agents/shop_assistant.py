@@ -1,169 +1,151 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import JsonOutputParser
-from langchain_core.runnables import RunnableConfig, RunnablePassthrough
 from langchain.agents import AgentExecutor, create_openai_functions_agent
-from langgraph.prebuilt import ToolNode
 from loguru import logger
 from pprint import pformat
-from langchain_core.messages import HumanMessage, AIMessage
-from enum import Enum
-from typing import Dict, List
-from pydantic import BaseModel, model_validator, ValidatorFunctionWrapHandler, ValidationError
-from typing import Self
+from contextvars import ContextVar
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
 
 from config.assistant_conf import GPT_MODEL
 from ..base_state import BaseState
-from .shop_assistant_prompt import prompt_shop_assistant
+from .shop_assistant_prompt import build_system_prompt
 from .cost_calculator_mixin import CostCalculatorMixin
+from shop_api_client import shop_api_client
 
-class Product(str, Enum):
-    drinking = "Drinking yoghurt"
-    regular = "Regular yoghurt"
-    greek = "Greek yoghurt"
-    strawberry = "Strawberry yoghurt"
-    mango = "Mango yoghurt"
-    vanilla = "Vanilla yoghurt"
-    labneh = "Labneh"
-    labneh_deluxe = "Labneh deluxe"
-    cottage = "Cottage cheese"
-    sour_milk = "Sour milk"
+customer_phone_context: ContextVar[Optional[str]] = ContextVar("customer_phone", default=None)
+current_order_context: ContextVar[Optional[int]] = ContextVar("current_order_id", default=None)
 
-class OrderItem(BaseModel):
-    product: Product
-    quantity: int
 
-#    @model_validator(mode="wrap")
-#    @classmethod
-#    def model_wrap_validate(cls, data: dict, handler: ValidatorFunctionWrapHandler) -> Self:
-#        try:
-#            print("EOOOOO")
-#            print(data)
-#            result = handler(data)
-#        except ValidationError as e:
-#            raise ValueError(f"Invalid order: {e}") from e
-#        return result
+class OrderItemInput(BaseModel):
+    product_name: str = Field(description="Exact product name from the catalog")
+    quantity: int = Field(ge=1, description="Quantity ordered")
 
-@tool
-def process_order(order: List[OrderItem]) -> None:
-    """
-    Process an order by iterating through items and their quantities.
 
-    This function takes a list of OrderItem objects and processes each item in the order.
-    Each OrderItem contains a Product enum value and its quantity.
+def _resolve_product(product_name: str) -> dict:
+    product = shop_api_client.get_product_by_name(product_name)
+    if not product:
+        available = ", ".join(product["name"] for product in shop_api_client.list_products())
+        raise ValueError(f"Unknown product '{product_name}'. Available products: {available}")
+    return product
 
-    Args:
-        order (List[OrderItem]): A list of OrderItem objects, where each OrderItem contains:
-            - product (Product): The product enum value (e.g., "Labneh", "Greek yoghurt")
-            - quantity (int): The quantity ordered
-            Example: [
-                OrderItem(product=Product.labneh, quantity=2),
-                OrderItem(product=Product.greek, quantity=1)
-            ]
 
-    Returns:
-        None
+def _build_order_items(items: List[OrderItemInput]) -> tuple[list[dict], float]:
+    order_items = []
+    total = 0.0
+    for item in items:
+        product = _resolve_product(item.product_name)
+        order_items.append({"product_id": product["id"], "quantity": item.quantity})
+        total += product["price"] * item.quantity
+    return order_items, total
 
-    Logs:
-        - Warning level log of full order
-        - Warning level log for each item being processed
-    """
-    logger.warning(f"Processing order: {order}")
-    for item in order:
-        logger.warning(f"Processing {item.quantity} units of {item.product}")
-
-def get_price(item: str, quantity: int) -> int:
-    """
-    Get the price of an item.
-
-    Args:
-        item (str): The name of the item.
-        quantity (int): The quantity of the item.
-
-    Returns:
-        float: The price of the item.
-    """
-    return 1000 * quantity
 
 @tool
-def get_total_price(order: List[OrderItem]) -> int:
-    """
-    Get the total price of an order.
+def list_available_products() -> str:
+    """List all products currently available in the shop."""
+    products = shop_api_client.list_products()
+    if not products:
+        return "No products are currently available."
+    lines = [f"- {product['name']}: {product['price']}" for product in products]
+    return "Available products:\n" + "\n".join(lines)
 
-    Args:
-        order (dict): A dictionary containing items as keys and quantities as values.
-                     Example: {"item1": 2, "item2": 1}
-
-    Returns:
-        float: The total price of the order.
-    """
-    return sum(get_price(item.product, item.quantity) for item in order)
 
 @tool
-def get_payment_status(id: int) -> str:
+def get_total_price(order: List[OrderItemInput]) -> float:
+    """Calculate the total price for an order using live product prices."""
+    _, total = _build_order_items(order)
+    return total
+
+
+@tool
+def process_order(order: List[OrderItemInput], order_type: str = "pickup") -> str:
     """
-    Get the status of an order.
+    Create an order in the shop system for the current WhatsApp customer.
 
     Args:
-        id (int): The id of the payment.
-
-    Returns:
-        str: The status of the payment.
+        order: List of items with product_name and quantity.
+        order_type: Either 'pickup' or 'delivery'.
     """
-    if id % 2 == 0:
-        return "paid"
-    else:
-        return "not paid"
+    phone = customer_phone_context.get()
+    if not phone:
+        raise ValueError("Customer phone number is unavailable for this conversation.")
+
+    if order_type not in {"pickup", "delivery"}:
+        raise ValueError("order_type must be 'pickup' or 'delivery'")
+
+    order_items, total = _build_order_items(order)
+    customer = shop_api_client.get_or_create_customer(phone_number=phone)
+    created_order = shop_api_client.create_order(
+        customer_id=customer["id"],
+        items=order_items,
+        order_type=order_type,
+    )
+    current_order_context.set(created_order["id"])
+    logger.info(f"Created order {created_order['id']} for customer {customer['id']}")
+    return (
+        f"Order #{created_order['id']} created successfully. "
+        f"Total amount: {created_order.get('total_amount', total)}. "
+        f"Payment status: {created_order.get('payment_status', 'notPaid')}."
+    )
+
+
+@tool
+def get_payment_status(order_id: int) -> str:
+    """Get payment status for an order by order ID."""
+    order = shop_api_client.get_order(order_id)
+    return order.get("payment_status", "notPaid")
+
+
+@tool
+def request_order_payment(order_id: int, phone_number: Optional[str] = None) -> str:
+    """Request MTN MoMo payment for an existing order."""
+    order = shop_api_client.get_order(order_id)
+    payer_phone = phone_number or customer_phone_context.get()
+    if not payer_phone:
+        raise ValueError("Phone number is required to request payment.")
+
+    payment = shop_api_client.request_payment(
+        order_id=order_id,
+        phone_number=payer_phone,
+        amount=float(order.get("total_amount", 0)),
+        message=f"Payment for XastrinShop order #{order_id}",
+    )
+    return (
+        f"Payment request sent for order #{order_id}. "
+        f"Status: {payment.get('status', 'PENDING')}. "
+        f"Transaction ID: {payment.get('transaction_id', 'pending')}."
+    )
+
 
 class ShopAssistant(CostCalculatorMixin):
-
-
     def __init__(self):
         super().__init__()
-        prompt = [(i["role"], i["content"]) for i in prompt_shop_assistant["prompt"]]
-        system_prompt = list(filter(lambda x: x[0] == "system", prompt))
         self._prompt = ChatPromptTemplate.from_messages([
-            *system_prompt,
+            ("system", build_system_prompt()),
             MessagesPlaceholder("messages"),
-            MessagesPlaceholder("agent_scratchpad")
+            MessagesPlaceholder("agent_scratchpad"),
         ])
 
-        process_order_tool = process_order
-        get_total_price_tool = get_total_price
-        get_payment_status_tool = get_payment_status
-
         self._llm = ChatOpenAI(model=GPT_MODEL)
-        tools = [
-            process_order,
+        self._tools = [
+            list_available_products,
             get_total_price,
-            get_payment_status
+            process_order,
+            get_payment_status,
+            request_order_payment,
         ]
 
-        # Create agent
-        agent = create_openai_functions_agent(self._llm, tools, self._prompt)
-        
-        # Create executor
-        self._runnable = AgentExecutor(
-            agent=agent,
-            tools=tools,
-            verbose=False  # Set to True to see the agent's thought process
-        )
-    #    #self._runnable = self._include_langfuse_support(self._runnable)
+        agent = create_openai_functions_agent(self._llm, self._tools, self._prompt)
+        self._runnable = AgentExecutor(agent=agent, tools=self._tools, verbose=False)
 
-    #def __call__(self, state: BaseState, config: RunnableConfig):
-    #    logger.debug("CALLING ShopAssistant")
-    #    result = self._costs_invoke_OpenAI({
-    #        "messages": state["messages"]
-    #    })
-    #    state["messages"] = state["messages"] + [result]
-    #    return {"messages": result}
-    
-    def __call__(self, state: BaseState, config: RunnableConfig):
-        #TODO: logger.log("AGENT_CALL", "CALLING ShopAssistant")
-        result = self._costs_invoke_OpenAI({
-            "messages": state["messages"]
-        })
+    def __call__(self, state: BaseState, config):
+        customer_phone = state.get("customer_phone")
+        if customer_phone:
+            customer_phone_context.set(customer_phone)
+
+        result = self._costs_invoke_OpenAI({"messages": state["messages"]})
         logger.debug("State: " + pformat(state))
         state["messages"] = state["messages"] + [{"role": "assistant", "content": result["output"]}]
         return {"messages": state["messages"][-1]}

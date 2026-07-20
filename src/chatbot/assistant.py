@@ -75,7 +75,7 @@ class Assistant(DiagramDrawerMixin):
     #    costs = Series(Costs.get_total_costs())
     #    return costs
 
-    def generate_stream_response(self, input):
+    def generate_stream_response(self, input, customer_phone: str | None = None):
         """
         Generate a stream response for the given input.
 
@@ -92,7 +92,10 @@ class Assistant(DiagramDrawerMixin):
         Yields:
             str: The messages and state changes that result from the graph's processing.
         """
-        events = self._graph.stream({"messages": ("user", input)}, self._config, stream_mode="values")
+        graph_input = {"messages": ("user", input)}
+        if customer_phone:
+            graph_input["customer_phone"] = customer_phone
+        events = self._graph.stream(graph_input, self._config, stream_mode="values")
         for event in events:
             message = event.get("messages")
             

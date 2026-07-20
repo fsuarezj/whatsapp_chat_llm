@@ -10,7 +10,7 @@ def add_cost(state: dict, costs: dict) -> object:
         new_costs = costs
     return BaseState(new_costs)
 
-class BaseState(TypedDict):
+class BaseState(TypedDict, total=False):
     messages: Annotated[list[AnyMessage], add_messages]
-    #costs: Annotated[dict,add_cost]
+    customer_phone: str
     next: str

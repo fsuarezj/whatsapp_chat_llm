@@ -1,31 +1,18 @@
-import sys
 import os
+import sys
 
-ApplicationDirectory = '.'
-ApplicationName = 'app'
-VirtualEnvDirectory = '.venv'
-VirtualEnv = os.path.join(os.getcwd(), VirtualEnvDirectory, 'bin', 'python')
-if sys.executable != VirtualEnv: os.execl(VirtualEnv, VirtualEnv, *sys.argv)
-sys.path.insert(0, os.path.join(os.getcwd(), ApplicationDirectory))
-#sys.path.insert(0, os.path.join(os.getcwd(), ApplicationDirectory, ApplicationName))
-sys.path.insert(0, os.path.join(os.getcwd(), VirtualEnvDirectory, 'bin'))
-os.chdir(os.path.join(os.getcwd(), ApplicationDirectory))
-#os.environ.setdefault('DJANGO_SETTINGS_MODULE', ApplicationName + '.settings')
+application_directory = os.path.dirname(os.path.abspath(__file__))
+src_directory = os.path.join(application_directory, "src")
+virtualenv_python = os.path.join(application_directory, ".venv", "bin", "python")
 
-def app(environ, start_response):
-    start_response('200 OK', [('Content-Type', 'text/plain')])
-    return [b'Hello, World!']
+if os.path.exists(virtualenv_python) and sys.executable != virtualenv_python:
+    os.execl(virtualenv_python, virtualenv_python, *sys.argv)
 
-application = app
+sys.path.insert(0, src_directory)
+os.chdir(application_directory)
 
-#from dotenv import load_dotenv
-#load_dotenv()
-#print(os.getenv('HOME'))
-#INTERP = os.path.join(os.getenv('HOME'), 'whatsapp-chat-llm.xastrin.com/.venv/bin/python')
-#if sys.executable != INTERP:
-#    os.execl(INTERP, INTERP, *sys.argv)
-#
-#from src.app import app as application
+from dotenv import load_dotenv
 
-#if __name__ == '__main__':
-#    application.run() 
+load_dotenv()
+
+from app import app as application  # noqa: E402

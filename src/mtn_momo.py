@@ -125,7 +125,7 @@ class MTNMoMo:
                 },
                 "payerMessage": message or "Payment request",
                 "payeeNote": "Payment request",
-                "callbackUrl": "https://your-callback-url.com/webhook",  # Replace with your webhook URL
+                "callbackUrl": os.getenv("MTN_MOMO_CALLBACK_URL", ""),
                 "status": "PENDING"
             }
             
